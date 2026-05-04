@@ -40,21 +40,35 @@
       "expo-router",
       "expo-secure-store",
       "expo-location",
-      ["expo-font", {
-        "fonts": [
-          "./assets/fonts/Amazon-Ember-Regular.ttf",
-          "./assets/fonts/Amazon-Ember-Medium.ttf",
-          "./assets/fonts/Amazon-Ember-Bold.ttf",
-          "./assets/fonts/Amazon-Ember-Mono.ttf"
-        ]
-      }],
-      ["expo-splash-screen", {
-        "backgroundColor": "#F8AC12",
-        "image": "./assets/images/splash.png",
-        "imageWidth": 300,
-        "resizeMode": "contain"
-      }]
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Amazon-Ember-Regular.ttf",
+            "./assets/fonts/Amazon-Ember-Medium.ttf",
+            "./assets/fonts/Amazon-Ember-Bold.ttf",
+            "./assets/fonts/Amazon-Ember-Mono.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F8AC12",
+          "image": "./assets/images/splash.png",
+          "imageWidth": 300,
+          "resizeMode": "contain"
+        }
+      ]
     ],
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "50a03d41-2934-49f3-8926-4c6e86eae05a"
+      }
+    }
   }
 }
