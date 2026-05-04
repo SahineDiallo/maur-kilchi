@@ -51,5 +51,9 @@
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "1.27.0",
+    "lightningcss-linux-arm64-gnu": "1.27.0"
+  }
 }
