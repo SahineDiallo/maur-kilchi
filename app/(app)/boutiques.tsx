@@ -35,12 +35,12 @@ function FilterIcon({
       <View style={[fi.box, active && fi.boxOn]}>
         <Text style={fi.emoji}>{emoji}</Text>
       </View>
-      <Text style={[fi.label, active && fi.labelOn]} numberOfLines={1}>{label}</Text>
+      <Text style={[fi.label, active && fi.labelOn]} numberOfLines={2}>{label}</Text>
     </TouchableOpacity>
   );
 }
 const fi = StyleSheet.create({
-  wrap:    { alignItems: "center", gap: 6, width: 72 },
+  wrap:    { alignItems: "center", gap: 6, width: 84 },
   box:     {
     width: 64, height: 64, borderRadius: 20,
     backgroundColor: "rgba(255,255,255,0.72)",

@@ -196,12 +196,12 @@ function CategoryTab({
       <View style={[tab.box, active && tab.boxOn]}>
         <Text style={tab.emoji}>{emoji}</Text>
       </View>
-      <Text style={[tab.label, active && tab.labelOn]} numberOfLines={1}>{label}</Text>
+      <Text style={[tab.label, active && tab.labelOn]} numberOfLines={2}>{label}</Text>
     </TouchableOpacity>
   );
 }
 const tab = StyleSheet.create({
-  wrap:    { alignItems: "center", gap: 5, width: 64 },
+  wrap:    { alignItems: "center", gap: 5, width: 76 },
   box:     {
     width: 56, height: 56, borderRadius: 3,
     backgroundColor: C.goldLight,

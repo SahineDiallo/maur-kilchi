@@ -7,11 +7,13 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "channel": "development",
       "android": { "buildType": "apk" },
       "ios":     { "simulator": true }
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "android": { "buildType": "apk" },
       "ios":     { "simulator": false },
       "env": {
@@ -20,7 +22,9 @@
     },
     "production": {
       "distribution": "store",
+      "channel": "production",
       "android": { "buildType": "app-bundle" },
+      "ios":     { "buildConfiguration": "Release" },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://maurikilchi.com"
       }
