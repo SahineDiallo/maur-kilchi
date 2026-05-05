@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.maurikilchi.app",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Maurikilchi utilise votre position pour afficher les livreurs proches de vous.",
         "NSLocationAlwaysUsageDescription": "Maurikilchi utilise votre position pour afficher les livreurs proches de vous."
@@ -29,7 +29,7 @@
         "backgroundColor": "#000000"
       },
       "package": "com.maurikilchi.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
@@ -69,6 +69,9 @@
       "eas": {
         "projectId": "50a03d41-2934-49f3-8926-4c6e86eae05a"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/50a03d41-2934-49f3-8926-4c6e86eae05a"
     }
   }
 }
