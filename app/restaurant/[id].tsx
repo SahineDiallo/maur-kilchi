@@ -256,17 +256,16 @@ export default function RestaurantDetail() {
   // ── Load data ──────────────────────────────────────────────────────────────
   const loadData = useCallback(() => {
     setLoading(true);
-    Promise.all([
+    Promise.allSettled([
       api.get(`/boutiques/${id}/`),
       api.get(`/products/?boutique=${id}`),
       api.get(`/categories/?boutique_type=restaurant`),
     ])
       .then(([b, p, cats]) => {
-        setRestaurant(b);
-        setProducts(p?.results ?? (Array.isArray(p) ? p : []));
-        setRestaurantCats(Array.isArray(cats) ? cats : []);
+        if (b.status === "fulfilled") setRestaurant(b.value);
+        if (p.status === "fulfilled") setProducts(p.value?.results ?? (Array.isArray(p.value) ? p.value : []));
+        if (cats.status === "fulfilled") setRestaurantCats(Array.isArray(cats.value) ? cats.value : []);
       })
-      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 

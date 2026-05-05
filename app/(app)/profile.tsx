@@ -200,9 +200,8 @@ export default function Profile() {
   const [boutique,     setBoutique]     = useState<any>(null);
   const [roleLoading,  setRoleLoading]  = useState(true);
 
-  if (!isAuthenticated) return <Redirect href="/(auth)" />;
-
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (user?.role === "livreur") {
       api.get("/livreurs/me/")
         .then((d) => setLivreur(d))
@@ -214,7 +213,9 @@ export default function Profile() {
     api.get("/boutiques/mine/")
       .then((d) => setBoutique(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)))
       .catch(() => setBoutique(null));
-  }, [user?.role]);
+  }, [user?.role, isAuthenticated]);
+
+  if (!isAuthenticated) return <Redirect href="/(auth)" />;
 
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vous déconnecter ?", [

@@ -2,8 +2,8 @@
   "expo": {
     "name": "MAURI-KILCHI",
     "slug": "maurikilchi-app",
-    "version": "1.1.0",
-    "runtimeVersion": "1.1.0",
+    "version": "1.1.1",
+    "runtimeVersion": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/main_logo_backup.png",
     "scheme": "maurikilchi",
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.maurikilchi.app",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Maurikilchi utilise votre position pour afficher les livreurs proches de vous.",
         "NSLocationAlwaysUsageDescription": "Maurikilchi utilise votre position pour afficher les livreurs proches de vous."
@@ -29,7 +29,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.maurikilchi.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",

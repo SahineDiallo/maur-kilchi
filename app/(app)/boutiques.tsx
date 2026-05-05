@@ -115,7 +115,7 @@ function RestaurantCard({ item }: { item: any }) {
   return (
     <TouchableOpacity
       style={rc.card}
-      onPress={() => router.push(`/restaurant/${item.id}`)}
+      onPress={() => router.push(`/restaurant/${item.slug ?? item.id}`)}
       activeOpacity={0.92}
     >
       {/* ── Cover image ── */}
