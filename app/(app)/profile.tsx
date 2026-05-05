@@ -6,7 +6,7 @@ import {
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import {
   ChevronRight, ShoppingBag, User, LogOut,
   Settings, Shield, Star, Package, MapPin, Truck,
@@ -200,8 +200,9 @@ export default function Profile() {
   const [boutique,     setBoutique]     = useState<any>(null);
   const [roleLoading,  setRoleLoading]  = useState(true);
 
+  if (!isAuthenticated) return <Redirect href="/(auth)" />;
+
   useEffect(() => {
-    if (!isAuthenticated) { router.replace("/(auth)"); return; }
     if (user?.role === "livreur") {
       api.get("/livreurs/me/")
         .then((d) => setLivreur(d))
@@ -213,9 +214,7 @@ export default function Profile() {
     api.get("/boutiques/mine/")
       .then((d) => setBoutique(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)))
       .catch(() => setBoutique(null));
-  }, [isAuthenticated]);
-
-  if (!isAuthenticated) return null;
+  }, [user?.role]);
 
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vous déconnecter ?", [

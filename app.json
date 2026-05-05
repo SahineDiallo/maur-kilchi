@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Maurikilchi",
+    "name": "MAURI-KILCHI",
     "slug": "maurikilchi-app",
     "version": "1.1.0",
     "runtimeVersion": "1.1.0",
     "orientation": "portrait",
-    "icon": "./assets/images/main_logo_dark.png",
+    "icon": "./assets/images/main_logo_backup.png",
     "scheme": "maurikilchi",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -25,8 +25,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/main_logo_dark.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/images/main_logo_backup.png",
+        "backgroundColor": "#ffffff"
       },
       "package": "com.maurikilchi.app",
       "versionCode": 2,
