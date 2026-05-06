@@ -5,8 +5,29 @@ import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
-  View, StyleSheet, Animated, Text, Easing, Dimensions,
+  View, StyleSheet, Animated, Text, Easing, Dimensions, Alert,
 } from "react-native";
+
+// ── Global error handler — shows on-screen alert so you can read the crash
+// message directly on the phone without needing Metro connected ──────────────
+if (typeof global !== "undefined" && (global as any).ErrorUtils) {
+  (global as any).ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+    console.error(`[GlobalError] isFatal=${isFatal}`, error.message, error.stack);
+    Alert.alert(
+      isFatal ? "💥 Fatal crash" : "⚠️ JS Error",
+      `${error.message}\n\n${error.stack?.slice(0, 400) ?? "no stack"}`,
+      [{ text: "OK" }],
+    );
+  });
+}
+
+// ── Unhandled promise rejections ──────────────────────────────────────────────
+const _origHandler = (global as any).Promise?.onUnhandledRejection;
+if (typeof Promise !== "undefined") {
+  (global as any).__rejectionTracker = (reason: any) => {
+    console.error("[UnhandledRejection]", reason?.message ?? reason, reason?.stack);
+  };
+}
 import Svg, { Path, Rect, Defs, Pattern as SvgPattern } from "react-native-svg";
 import { C, F, FA } from "@/constants/theme";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -319,7 +340,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (!fontsLoaded) return;
     SplashScreen.hideAsync();
-    bootstrap().finally(() => setAppReady(true));
+    console.log("[App] bootstrap starting…");
+    bootstrap()
+      .then(() => console.log("[App] bootstrap OK ✅"))
+      .catch((e) => console.error("[App] bootstrap ERROR ❌", e?.message))
+      .finally(() => setAppReady(true));
   }, [fontsLoaded]);
 
   // Once both signals arrive, fade the splash overlay out over the already-

@@ -10,9 +10,9 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/splash_blank.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F8AC12"
+      "backgroundColor": "#FFFDF5"
     },
     "ios": {
       "supportsTablet": false,
@@ -25,7 +25,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/main_logo_backup.png",
+        "foregroundImage": "./assets/images/main_logo_padded.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.maurikilchi.app",
@@ -54,9 +54,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F8AC12",
-          "image": "./assets/images/splash.png",
-          "imageWidth": 300,
+          "backgroundColor": "#FFFDF5",
+          "image": "./assets/images/splash_blank.png",
+          "imageWidth": 1,
           "resizeMode": "contain"
         }
       ]

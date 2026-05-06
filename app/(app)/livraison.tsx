@@ -271,13 +271,21 @@ export default function Livraison() {
       let data: any[] = [];
       let nearby = false;
       if (c) {
+        console.log(`[Livraison] 🌐 GET /livreurs/ with coords lat=${c.latitude} lng=${c.longitude}`);
         data = await api.get<any[]>(`/livreurs/?lat=${c.latitude}&lng=${c.longitude}&radius=15`);
+        console.log("[Livraison] /livreurs/ (nearby) ✅ count:", data.length);
         nearby = data.length > 0;
       }
-      if (data.length === 0) data = await api.get<any[]>("/livreurs/");
+      if (data.length === 0) {
+        console.log("[Livraison] 🌐 GET /livreurs/ (no coords / fallback)");
+        data = await api.get<any[]>("/livreurs/");
+        console.log("[Livraison] /livreurs/ (fallback) ✅ count:", data.length);
+      }
       setLivreurs(data);
       setIsNearby(nearby);
-    } catch { /* silent */ } finally {
+    } catch (e: any) {
+      console.error("[Livraison] /livreurs/ ❌", e?.message, e?.response?.status);
+    } finally {
       setLoading(false);
       setRefreshing(false);
     }
@@ -285,38 +293,55 @@ export default function Livraison() {
 
   // ── Location on mount ───────────────────────────────────────────────────────
   useEffect(() => {
+    console.log("[Livraison] 📍 mount — storedCoords:", storedCoords ? `${storedCoords.latitude},${storedCoords.longitude}` : "null", "| storedInMR:", storedInMR);
     // If home screen already detected location, skip GPS entirely
     if (storedInMR !== null && storedCoords) {
+      console.log("[Livraison] using cached location, skipping GPS");
       fetchLivreurs();
       return;
     }
     let mounted = true;
     (async () => {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      if (status === "granted") {
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        const c = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-        coordsRef.current = c;
-        if (mounted) {
-          setUserCoords(c);
-          const inside = isInMauritania(c.latitude, c.longitude);
-          setInMR(inside);
-          if (inside) {
-            try {
-              const [place] = await Location.reverseGeocodeAsync(c);
-              const city = place?.city ?? place?.subregion ?? place?.region ?? "";
-              if (city && mounted) {
-                setOrigin(city);
-                storeSetLocation(c, inside, city);
-              } else {
+      try {
+        console.log("[Livraison] checking location permission…");
+        const { status } = await Location.getForegroundPermissionsAsync();
+        console.log("[Livraison] location permission:", status);
+        if (status === "granted") {
+          console.log("[Livraison] getting GPS position…");
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          const c = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          console.log("[Livraison] GPS ✅", c.latitude, c.longitude);
+          coordsRef.current = c;
+          if (mounted) {
+            setUserCoords(c);
+            const inside = isInMauritania(c.latitude, c.longitude);
+            console.log("[Livraison] inMauritania:", inside);
+            setInMR(inside);
+            if (inside) {
+              try {
+                const [place] = await Location.reverseGeocodeAsync(c);
+                const city = place?.city ?? place?.subregion ?? place?.region ?? "";
+                console.log("[Livraison] reverse geocode city:", city);
+                if (city && mounted) {
+                  setOrigin(city);
+                  storeSetLocation(c, inside, city);
+                } else {
+                  storeSetLocation(c, inside, null);
+                }
+              } catch (e: any) {
+                console.warn("[Livraison] reverseGeocode failed:", e?.message);
                 storeSetLocation(c, inside, null);
               }
-            } catch { storeSetLocation(c, inside, null); }
-          } else {
-            storeSetLocation(c, false, null);
+            } else {
+              storeSetLocation(c, false, null);
+            }
           }
+        } else {
+          console.warn("[Livraison] location permission denied:", status);
+          if (mounted) setInMR(null);
         }
-      } else {
+      } catch (e: any) {
+        console.error("[Livraison] location error ❌", e?.message, e?.stack?.slice(0, 200));
         if (mounted) setInMR(null);
       }
       fetchLivreurs();
@@ -394,6 +419,8 @@ export default function Livraison() {
     : NKC;
 
   const outsideMR = inMR === false;
+
+  console.log("[Livraison] render — tab:", tab, "| inMR:", inMR, "| loading:", loading, "| livreurs:", livreurs.length, "| userCoords:", userCoords ? "yes" : "no");
 
   return (
     <View style={s.root}>

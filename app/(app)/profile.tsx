@@ -201,19 +201,28 @@ export default function Profile() {
   const [roleLoading,  setRoleLoading]  = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    console.log("[Profile] useEffect — isAuthenticated:", isAuthenticated, "| user.role:", user?.role ?? "null");
+    if (!isAuthenticated) {
+      console.log("[Profile] not authenticated → skipping fetch");
+      return;
+    }
     if (user?.role === "livreur") {
+      console.log("[Profile] 🚚 fetching /livreurs/me/…");
       api.get("/livreurs/me/")
-        .then((d) => setLivreur(d))
-        .catch(() => setLivreur(null))
+        .then((d) => { console.log("[Profile] /livreurs/me/ ✅", JSON.stringify(d).slice(0, 120)); setLivreur(d); })
+        .catch((e) => { console.error("[Profile] /livreurs/me/ ❌", e?.message); setLivreur(null); })
         .finally(() => setRoleLoading(false));
     } else {
+      console.log("[Profile] role is not livreur → roleLoading = false");
       setRoleLoading(false);
     }
+    console.log("[Profile] 🏪 fetching /boutiques/mine/…");
     api.get("/boutiques/mine/")
-      .then((d) => setBoutique(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)))
-      .catch(() => setBoutique(null));
+      .then((d) => { console.log("[Profile] /boutiques/mine/ ✅", JSON.stringify(d).slice(0, 120)); setBoutique(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)); })
+      .catch((e) => { console.error("[Profile] /boutiques/mine/ ❌", e?.message); setBoutique(null); });
   }, [user?.role, isAuthenticated]);
+
+  console.log("[Profile] render — isAuthenticated:", isAuthenticated, "| roleLoading:", roleLoading, "| isLivreur:", !roleLoading && livreur !== null);
 
   if (!isAuthenticated) return <Redirect href="/(auth)" />;
 

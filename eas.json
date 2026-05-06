@@ -9,7 +9,7 @@
       "distribution": "internal",
       "channel": "development",
       "android": { "buildType": "apk" },
-      "ios":     { "simulator": true }
+      "ios":     { "simulator": false }
     },
     "preview": {
       "distribution": "internal",
