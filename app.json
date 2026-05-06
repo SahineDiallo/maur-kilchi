@@ -8,7 +8,7 @@
     "icon": "./assets/images/main_logo_backup.png",
     "scheme": "maurikilchi",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/splash_blank.png",
       "resizeMode": "contain",

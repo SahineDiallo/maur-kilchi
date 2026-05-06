@@ -304,8 +304,15 @@ export default function Livraison() {
     (async () => {
       try {
         console.log("[Livraison] checking location permission…");
-        const { status } = await Location.getForegroundPermissionsAsync();
+        // Check first, then request if undetermined
+        let { status } = await Location.getForegroundPermissionsAsync();
         console.log("[Livraison] location permission:", status);
+        if (status === "undetermined") {
+          console.log("[Livraison] requesting location permission…");
+          const result = await Location.requestForegroundPermissionsAsync();
+          status = result.status;
+          console.log("[Livraison] permission after request:", status);
+        }
         if (status === "granted") {
           console.log("[Livraison] getting GPS position…");
           const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
@@ -337,8 +344,9 @@ export default function Livraison() {
             }
           }
         } else {
+          // Permission denied — still show the livreurs list without map location
           console.warn("[Livraison] location permission denied:", status);
-          if (mounted) setInMR(null);
+          if (mounted) setInMR(true); // assume Mauritania, show the list
         }
       } catch (e: any) {
         console.error("[Livraison] location error ❌", e?.message, e?.stack?.slice(0, 200));
@@ -576,8 +584,8 @@ export default function Livraison() {
                 </View>
               )}
 
-              {/* Cards — show skeleton until location is resolved AND livreurs loaded */}
-              {(loading || inMR === null)
+              {/* Cards — show skeleton until livreurs are loaded */}
+              {loading
                 ? <SkeletonList />
                 : filtered.length === 0
                   ? <Text style={s.empty}>Aucun livreur disponible</Text>
