@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert, Switch,
+  ScrollView, Alert, Switch, Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -51,7 +51,8 @@ function Section({ title, children }: { title?: string; children: React.ReactNod
 }
 const sc = StyleSheet.create({
   wrap:  { backgroundColor: C.card, borderRadius: 15, marginHorizontal: S.screen,
-    marginBottom: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" },
+    marginBottom: 12, overflow: Platform.OS === "android" ? "visible" : "hidden",
+    boxShadow: "0 2px 12px rgba(0,0,0,0.07)" },
   label: { fontFamily: F.bold, fontSize: Sz.xs, color: C.textMuted,
     paddingHorizontal: S.card, paddingTop: 12, paddingBottom: 4,
     textTransform: "uppercase", letterSpacing: 0.8 },

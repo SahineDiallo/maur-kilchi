@@ -261,6 +261,7 @@ export default function Livraison() {
   const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(storedCoords);
   const [inMR,       setInMR]       = useState<boolean | null>(storedInMR);
   const coordsRef = useRef<{ latitude: number; longitude: number } | null>(storedCoords);
+  const [mapReady, setMapReady] = useState(false);
   const mapRef    = useRef<MapView>(null);
   const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -527,13 +528,14 @@ export default function Livraison() {
                     showsUserLocation={!!userCoords}
                     showsMyLocationButton={false}
                     showsCompass={false}
+                    onMapReady={() => setMapReady(true)}
                   >
-                    {userCoords && (
+                    {mapReady && userCoords && (
                       <Circle center={userCoords} radius={2000}
                         fillColor="rgba(248,172,18,0.08)"
                         strokeColor="rgba(248,172,18,0.35)" strokeWidth={1.5} />
                     )}
-                    {filtered.map(l =>
+                    {mapReady && filtered.map(l =>
                       l.latitude && l.longitude ? (
                         <Marker key={l.id}
                           coordinate={{ latitude: l.latitude, longitude: l.longitude }}

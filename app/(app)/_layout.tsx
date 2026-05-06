@@ -2,7 +2,8 @@ import { Tabs } from "expo-router";
 import { Platform, View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Home, Grid, Coffee, User, Truck } from "react-native-feather";
 import { C, F, Sz } from "@/constants/theme";
-import React from "react";
+import React, { useEffect } from "react";
+import * as Location from "expo-location";
 
 // ── Error boundary — catches render crashes in any tab screen ─────────────────
 class TabErrorBoundary extends React.Component<
@@ -53,6 +54,12 @@ const EXTRA = Platform.OS === "android" ? 8 : 0;
 const TAB_H = 64;
 
 export default function AppLayout() {
+  // Ask for location permission as soon as the user enters the app —
+  // before they ever tap Livraison, so the map is ready when they get there.
+  useEffect(() => {
+    Location.requestForegroundPermissionsAsync().catch(() => {});
+  }, []);
+
   return (
     <TabErrorBoundary>
     <Tabs

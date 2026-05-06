@@ -8,7 +8,7 @@
     "icon": "./assets/images/main_logo_backup.png",
     "scheme": "maurikilchi",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash_blank.png",
       "resizeMode": "contain",
@@ -24,6 +24,11 @@
       }
     },
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBGwboYBZ9gTj8hF2dWSLvT4JyMPAEoIpI"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/main_logo_padded.png",
         "backgroundColor": "#ffffff"
