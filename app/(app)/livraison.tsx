@@ -272,13 +272,17 @@ export default function Livraison() {
       let data: any[] = [];
       let nearby = false;
       if (c) {
-        console.log(`[Livraison] 🌐 GET /livreurs/ with coords lat=${c.latitude} lng=${c.longitude}`);
-        data = await api.get<any[]>(`/livreurs/?lat=${c.latitude}&lng=${c.longitude}&radius=15`);
-        console.log("[Livraison] /livreurs/ (nearby) ✅ count:", data.length);
-        nearby = data.length > 0;
+        try {
+          console.log(`[Livraison] 🌐 GET /livreurs/ with coords lat=${c.latitude} lng=${c.longitude}`);
+          data = await api.get<any[]>(`/livreurs/?lat=${c.latitude}&lng=${c.longitude}&radius=15`);
+          console.log("[Livraison] /livreurs/ (nearby) ✅ count:", data.length);
+          nearby = data.length > 0;
+        } catch (e: any) {
+          console.warn("[Livraison] nearby search failed (", e?.message, "), falling back to all livreurs");
+        }
       }
       if (data.length === 0) {
-        console.log("[Livraison] 🌐 GET /livreurs/ (no coords / fallback)");
+        console.log("[Livraison] 🌐 GET /livreurs/ (fallback)");
         data = await api.get<any[]>("/livreurs/");
         console.log("[Livraison] /livreurs/ (fallback) ✅ count:", data.length);
       }
