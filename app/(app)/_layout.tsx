@@ -54,8 +54,7 @@ const EXTRA = Platform.OS === "android" ? 8 : 0;
 const TAB_H = 64;
 
 export default function AppLayout() {
-  // Ask for location permission as soon as the user enters the app —
-  // before they ever tap Livraison, so the map is ready when they get there.
+  // Ask for location permission as soon as the user enters the app
   useEffect(() => {
     Location.requestForegroundPermissionsAsync().catch(() => {});
   }, []);

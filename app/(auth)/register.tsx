@@ -117,7 +117,7 @@ function PhoneInput({ country, onCountryPress, control, focused, setFocused }: a
 const pi = StyleSheet.create({
   box:       { flexDirection: "row", alignItems: "center",
     borderWidth: 1.5, borderColor: BDR, borderRadius: 14,
-    backgroundColor: SURF, overflow: "hidden", marginBottom: 8 },
+    backgroundColor: SURF, overflow: Platform.OS === "android" ? "visible" : "hidden", marginBottom: 8 },
   boxFocused:{ borderWidth: 2, borderColor: INK, backgroundColor: "#fff",
     boxShadow: "0 0 0 4px rgba(245,196,0,0.15)" },
   pill:      { flexDirection: "row", alignItems: "center", gap: 7,

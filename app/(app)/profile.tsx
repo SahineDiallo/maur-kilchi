@@ -6,7 +6,7 @@ import {
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Redirect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import {
   ChevronRight, ShoppingBag, User, LogOut,
   Settings, Shield, Star, Package, MapPin, Truck,
@@ -195,11 +195,18 @@ function VendeurProfile({ user, boutique, onLogout, router }: any) {
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function Profile() {
   const router = useRouter();
-  const { user, logout, isAuthenticated } = useAuthStore();
+  const { user, logout, isAuthenticated, bootstrapDone } = useAuthStore();
 
   const [livreur,      setLivreur]      = useState<any>(null);
   const [boutique,     setBoutique]     = useState<any>(null);
   const [roleLoading,  setRoleLoading]  = useState(true);
+
+  // Redirect to welcome screen after bootstrap confirms user is not logged in
+  useEffect(() => {
+    if (bootstrapDone && !isAuthenticated) {
+      router.replace("/(auth)");
+    }
+  }, [bootstrapDone, isAuthenticated]);
 
   useEffect(() => {
     console.log("[Profile] useEffect — isAuthenticated:", isAuthenticated, "| user.role:", user?.role ?? "null");
@@ -225,13 +232,11 @@ export default function Profile() {
 
   console.log("[Profile] render — isAuthenticated:", isAuthenticated, "| roleLoading:", roleLoading, "| isLivreur:", !roleLoading && livreur !== null);
 
-  if (!isAuthenticated) return <Redirect href="/(auth)" />;
-
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vous déconnecter ?", [
       { text: "Annuler", style: "cancel" },
       { text: "Déconnecter", style: "destructive",
-        onPress: () => { logout(); router.replace("/(auth)/sign-in"); } },
+        onPress: () => { logout(); router.replace("/(auth)"); } },
     ]);
   };
 

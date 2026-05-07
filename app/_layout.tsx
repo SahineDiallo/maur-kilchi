@@ -283,7 +283,7 @@ const sp = StyleSheet.create({
   logoZone: { alignItems: "center" },
   iconMark: {
     width: 94, height: 94, borderRadius: 28, backgroundColor: "#111",
-    alignItems: "center", justifyContent: "center", overflow: "hidden",
+    alignItems: "center", justifyContent: "center",
     marginBottom: 22,
     shadowColor: "#000", shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15, shadowRadius: 40, elevation: 10,
@@ -359,19 +359,20 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="auto" backgroundColor="transparent" translucent />
 
-      {/* Stack renders immediately in the background — home screen loads its
-          data while the splash is still playing, so it's ready when the
-          overlay fades away. */}
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(app)" />
-        <Stack.Screen name="boutique" />
-        <Stack.Screen name="restaurant" />
-        <Stack.Screen name="product" />
-        <Stack.Screen name="my-boutiques" />
-        <Stack.Screen name="edit-profile" />
-      </Stack>
+      {/* Stack only renders once fonts are loaded — prevents text being
+          measured with the fallback system font and showing truncated on first paint. */}
+      {fontsLoaded && (
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(app)" />
+          <Stack.Screen name="boutique" />
+          <Stack.Screen name="restaurant" />
+          <Stack.Screen name="product" />
+          <Stack.Screen name="my-boutiques" />
+          <Stack.Screen name="edit-profile" />
+        </Stack>
+      )}
 
       {/* Splash overlay — sits on top until the animation + bootstrap finish,
           then fades to transparent and unmounts. */}

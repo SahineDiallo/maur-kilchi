@@ -40,13 +40,11 @@ export default function Welcome() {
             resizeMode="contain"
           />
 
-          <Text style={s.headline}>
-            Bienvenue sur{"\n"}
-            <View style={s.hlWrap}>
-              <View style={s.hlBar} />
-              <Text style={s.headlineGold}>maurikilchi</Text>
-            </View>
-          </Text>
+          <Text style={s.headline}>Bienvenue sur</Text>
+          <View style={s.hlWrap}>
+            <View style={s.hlBar} />
+            <Text style={s.headlineGold}>maurikilchi</Text>
+          </View>
 
           <Text style={s.taglineAr}>سوقك الإلكتروني في موريتانيا</Text>
           <Text style={s.taglineFr}>Votre marché en ligne en Mauritanie</Text>
@@ -102,8 +100,8 @@ const s = StyleSheet.create({
   hero:         { flex: 1, justifyContent: "center", paddingTop: height * 0.02 },
   logo:         { width: 80, height: 80, marginBottom: 24 },
   headline:     { fontSize: Sz["3xl"], fontFamily: F.bold, color: INK,
-    lineHeight: 38, letterSpacing: -0.8, marginBottom: 14 },
-  hlWrap:       { position: "relative" },
+    lineHeight: 38, letterSpacing: -0.8, marginBottom: 4 },
+  hlWrap:       { marginBottom: 14 },
   hlBar:        { position: "absolute", bottom: 2, left: 0, right: 0,
     height: 8, backgroundColor: Y, borderRadius: 2, opacity: 0.6 },
   headlineGold: { fontSize: Sz["3xl"], fontFamily: F.bold, color: INK, letterSpacing: -0.8 },

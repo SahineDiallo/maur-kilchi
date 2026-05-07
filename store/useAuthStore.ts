@@ -22,6 +22,7 @@ type AuthStore = {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
+  bootstrapDone: boolean;
   pendingPhone:        string;
   pendingFirst:        string;
   pendingLast:         string;
@@ -42,6 +43,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
+  bootstrapDone: false,
   pendingPhone:        "",
   pendingFirst:        "",
   pendingLast:         "",
@@ -82,32 +84,36 @@ export const useAuthStore = create<AuthStore>((set) => ({
   }),
 
   bootstrap: async () => {
-    const access  = await SecureStore.getItemAsync("access_token");
-    const refresh = await SecureStore.getItemAsync("refresh_token");
-    if (access && refresh) {
-      set({ accessToken: access, isAuthenticated: true });
-      try {
-        const profile = await api.get("/auth/me/");
-        set({ user: {
-          id:                 profile.id,
-          phone:              profile.phone,
-          first_name:         profile.first_name,
-          last_name:          profile.last_name,
-          email:              profile.email,
-          avatar:             profile.avatar_url ?? profile.avatar,
-          is_staff:           profile.is_admin,
-          city:               profile.city ?? "",
-          whatsapp:           profile.whatsapp ?? "",
-          role:               profile.role ?? "vendeur",
-          vehicle_type:       profile.vehicle_type ?? "",
-          trajet_depart:      profile.trajet_depart ?? "",
-          trajet_destination: profile.trajet_destination ?? "",
-        }});
-      } catch {
-        await SecureStore.deleteItemAsync("access_token");
-        await SecureStore.deleteItemAsync("refresh_token");
-        set({ accessToken: null, isAuthenticated: false });
+    try {
+      const access  = await SecureStore.getItemAsync("access_token");
+      const refresh = await SecureStore.getItemAsync("refresh_token");
+      if (access && refresh) {
+        set({ accessToken: access, isAuthenticated: true });
+        try {
+          const profile = await api.get("/auth/me/");
+          set({ user: {
+            id:                 profile.id,
+            phone:              profile.phone,
+            first_name:         profile.first_name,
+            last_name:          profile.last_name,
+            email:              profile.email,
+            avatar:             profile.avatar_url ?? profile.avatar,
+            is_staff:           profile.is_admin,
+            city:               profile.city ?? "",
+            whatsapp:           profile.whatsapp ?? "",
+            role:               profile.role ?? "vendeur",
+            vehicle_type:       profile.vehicle_type ?? "",
+            trajet_depart:      profile.trajet_depart ?? "",
+            trajet_destination: profile.trajet_destination ?? "",
+          }});
+        } catch {
+          await SecureStore.deleteItemAsync("access_token");
+          await SecureStore.deleteItemAsync("refresh_token");
+          set({ accessToken: null, isAuthenticated: false });
+        }
       }
+    } finally {
+      set({ bootstrapDone: true });
     }
   },
 }));

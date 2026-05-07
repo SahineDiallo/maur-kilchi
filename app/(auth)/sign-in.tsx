@@ -86,13 +86,11 @@ export default function SignIn() {
                 style={s.logo}
                 resizeMode="contain"
               />
-              <Text style={s.headline}>
-                Bienvenue sur{"\n"}
-                <View style={s.hlWrap}>
-                  <View style={s.hlBar} />
-                  <Text style={s.headlineWord}>maurikilchi</Text>
-                </View>
-              </Text>
+              <Text style={s.headline}>Bienvenue sur</Text>
+              <View style={s.hlWrap}>
+                <View style={s.hlBar} />
+                <Text style={s.headlineWord}>maurikilchi</Text>
+              </View>
               <Text style={s.sub}>
                 Entrez votre numéro pour vous{"\n"}connecter ou créer un compte.
               </Text>
@@ -213,8 +211,8 @@ const s = StyleSheet.create({
   hero:        { paddingTop: 28, marginBottom: 36 },
   logo:        { width: 64, height: 64, marginBottom: 24 },
   headline:    { fontSize: Sz["3xl"], fontFamily: F.bold, color: INK,
-    lineHeight: 38, letterSpacing: -0.8, marginBottom: 12 },
-  hlWrap:      { position: "relative" },
+    lineHeight: 38, letterSpacing: -0.8, marginBottom: 4 },
+  hlWrap:      { marginBottom: 12 },
   hlBar:       { position: "absolute", bottom: 2, left: 0, right: 0,
     height: 8, backgroundColor: Y, borderRadius: 2, opacity: 0.6 },
   headlineWord:{ fontSize: Sz["3xl"], fontFamily: F.bold, color: INK, letterSpacing: -0.8 },
@@ -226,7 +224,7 @@ const s = StyleSheet.create({
 
   phoneBox: { flexDirection: "row", alignItems: "center",
     borderWidth: 1.5, borderColor: BDR, borderRadius: 14,
-    backgroundColor: SURF, overflow: "hidden", marginBottom: 8 },
+    backgroundColor: SURF, overflow: Platform.OS === "android" ? "visible" : "hidden", marginBottom: 8 },
   phoneBoxFocused: { borderWidth: 2, borderColor: INK, backgroundColor: "#fff",
     boxShadow: "0 0 0 4px rgba(245,196,0,0.15)" },
 
