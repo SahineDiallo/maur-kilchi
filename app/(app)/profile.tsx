@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert, Switch, Platform,
+  ScrollView, Alert, Switch, Platform, InteractionManager,
 } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -209,28 +209,29 @@ export default function Profile() {
   }, [bootstrapDone, isAuthenticated]);
 
   useEffect(() => {
-    console.log("[Profile] useEffect — isAuthenticated:", isAuthenticated, "| user.role:", user?.role ?? "null");
-    if (!isAuthenticated) {
-      console.log("[Profile] not authenticated → skipping fetch");
-      return;
-    }
-    if (user?.role === "livreur") {
-      console.log("[Profile] 🚚 fetching /livreurs/me/…");
-      api.get("/livreurs/me/")
-        .then((d) => { console.log("[Profile] /livreurs/me/ ✅", JSON.stringify(d).slice(0, 120)); setLivreur(d); })
-        .catch((e) => { console.error("[Profile] /livreurs/me/ ❌", e?.message); setLivreur(null); })
-        .finally(() => setRoleLoading(false));
-    } else {
-      console.log("[Profile] role is not livreur → roleLoading = false");
-      setRoleLoading(false);
-    }
-    console.log("[Profile] 🏪 fetching /boutiques/mine/…");
-    api.get("/boutiques/mine/")
-      .then((d) => { console.log("[Profile] /boutiques/mine/ ✅", JSON.stringify(d).slice(0, 120)); setBoutique(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)); })
-      .catch((e) => { console.error("[Profile] /boutiques/mine/ ❌", e?.message); setBoutique(null); });
-  }, [user?.role, isAuthenticated]);
+    if (!isAuthenticated) return;
 
-  console.log("[Profile] render — isAuthenticated:", isAuthenticated, "| roleLoading:", roleLoading, "| isLivreur:", !roleLoading && livreur !== null);
+    // Defer all data loading until after the tab-switch animation finishes.
+    // React Navigation wraps each screen in overflow:"hidden" during the
+    // animation; mounting new views inside it before the frame is done
+    // triggers the Fabric "addViewAt: child already has a parent" crash.
+    const task = InteractionManager.runAfterInteractions(() => {
+      if (user?.role === "livreur") {
+        api.get("/livreurs/me/")
+          .then((d) => setLivreur(d))
+          .catch(() => setLivreur(null))
+          .finally(() => setRoleLoading(false));
+      } else {
+        setRoleLoading(false);
+      }
+
+      api.get("/boutiques/mine/")
+        .then((d) => setBoutique(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)))
+        .catch(() => setBoutique(null));
+    });
+
+    return () => task.cancel();
+  }, [user?.role, isAuthenticated]);
 
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vous déconnecter ?", [
