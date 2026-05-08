@@ -348,12 +348,13 @@ export default function Home() {
   const firstLoad = useRef(true);
   const { detectedCity, inMauritania: storedInMR, setLocation } = useLocationStore();
 
-  // Silently detect city + MR boundary on first mount — no permission prompt
-  useEffect(() => {
-    if (storedInMR !== null) return; // already detected by a previous mount
+  // Detect city on every focus until we have a result — handles the case where
+  // permission was granted AFTER the first mount (async permission dialog).
+  useFocusEffect(useCallback(() => {
+    if (storedInMR !== null) return; // already have a result, stop retrying
     (async () => {
       try {
-        const { status } = await Location.getForegroundPermissionsAsync();
+        const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") return;
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         const c = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
@@ -363,7 +364,7 @@ export default function Home() {
         setLocation(c, inside, label);
       } catch {}
     })();
-  }, []);
+  }, [storedInMR]));
 
   useFocusEffect(useCallback(() => {
     // Show skeletons only on first mount, silent refresh on tab re-focus

@@ -272,26 +272,7 @@ export default function Profile() {
     return () => task.cancel();
   }, [user?.role, isAuthenticated]);
 
-  // Show sign-in wall in-place — no router.replace() to avoid the Fabric
-  // "addViewAt: child already has a parent" crash caused by navigating away
-  // while the screen is still mounting its initial view tree.
-  if (!isAuthenticated) {
-    return (
-      <GuestWall
-        onSignIn={() => router.push("/(auth)/sign-in")}
-        onRegister={() => router.push("/(auth)/register")}
-      />
-    );
-  }
-
-  const handleLogout = () => {
-    Alert.alert("Déconnexion", "Voulez-vous vous déconnecter ?", [
-      { text: "Annuler", style: "cancel" },
-      { text: "Déconnecter", style: "destructive",
-        onPress: () => logout() },
-    ]);
-  };
-
+  // useCallback MUST be declared before any conditional return (Rules of Hooks)
   const handleToggleOnline = useCallback(async (val: boolean) => {
     if (!livreur) return;
     const prev = livreur.is_online;
@@ -308,6 +289,23 @@ export default function Profile() {
       setLivreur((l: any) => ({ ...l, is_online: prev }));
     }
   }, [livreur]);
+
+  // Render in-place sign-in wall — no navigation during mount (avoids Fabric crash)
+  if (!isAuthenticated) {
+    return (
+      <GuestWall
+        onSignIn={() => router.push("/(auth)/sign-in")}
+        onRegister={() => router.push("/(auth)/register")}
+      />
+    );
+  }
+
+  const handleLogout = () => {
+    Alert.alert("Déconnexion", "Voulez-vous vous déconnecter ?", [
+      { text: "Annuler", style: "cancel" },
+      { text: "Déconnecter", style: "destructive", onPress: () => logout() },
+    ]);
+  };
 
   const isLivreur = !roleLoading && livreur !== null;
 
