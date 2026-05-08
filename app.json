@@ -16,7 +16,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.maurikilchimarket.app",
+      "bundleIdentifier": "com.maurikilchi.marketplace",
       "buildNumber": "4",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Maurikilchi utilise votre position pour afficher les livreurs proches de vous.",
@@ -33,7 +33,7 @@
         "foregroundImage": "./assets/images/main_logo_padded.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.maurikilchimarket.app",
+      "package": "com.maurikilchi.marketplace",
       "versionCode": 4,
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -72,11 +72,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "50a03d41-2934-49f3-8926-4c6e86eae05a"
+        "projectId": "4ce4f04b-ed45-4e54-b2bd-9d7d15eb19c4"
       }
     },
-    "updates": {
-      "url": "https://u.expo.dev/50a03d41-2934-49f3-8926-4c6e86eae05a"
-    }
+    "owner": "arabytes01"
   }
 }
