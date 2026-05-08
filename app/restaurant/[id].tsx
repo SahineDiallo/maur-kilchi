@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, Dimensions, Linking, ActivityIndicator, Animated,
+  Image, Dimensions, Linking, Animated,
   Alert, TextInput,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,14 +9,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   ArrowLeft, Phone, MessageCircle, MapPin,
-  Heart, Share2, Plus, Edit2, Trash2, Search, X, Star, Clock,
+  Heart, Plus, Edit2, Trash2, Search, X, Star, Clock,
 } from "react-native-feather";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { C, F, Sz, S, Shadow, Border } from "@/constants/theme";
 
-const { width, height } = Dimensions.get("window");
-const HERO_H     = Math.round(height * 0.45);
+const { width } = Dimensions.get("window");
+const HERO_H     = 270;
 const MENU_ITEM_W = (width - S.screen * 2 - 8) / 2;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -185,33 +185,30 @@ const mi = StyleSheet.create({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Category tab — vertical icon card (emoji box + label below)
+// Category tab — horizontal pill (emoji + label)
 // ─────────────────────────────────────────────────────────────────────────────
 function CategoryTab({
   label, icon, active, onPress,
 }: { label: string; icon?: string; active: boolean; onPress: () => void }) {
   const emoji = icon || getFoodEmoji(label.replace(/\s*\(\d+\)/, ""));
   return (
-    <TouchableOpacity style={tab.wrap} onPress={onPress} activeOpacity={0.78}>
-      <View style={[tab.box, active && tab.boxOn]}>
-        <Text style={tab.emoji}>{emoji}</Text>
-      </View>
-      <Text style={[tab.label, active && tab.labelOn]} numberOfLines={2}>{label}</Text>
+    <TouchableOpacity style={[tab.pill, active && tab.pillOn]} onPress={onPress} activeOpacity={0.78}>
+      <Text style={tab.emoji}>{emoji}</Text>
+      <Text style={[tab.label, active && tab.labelOn]} numberOfLines={1}>{label}</Text>
     </TouchableOpacity>
   );
 }
 const tab = StyleSheet.create({
-  wrap:    { alignItems: "center", gap: 5, width: 76 },
-  box:     {
-    width: 56, height: 56, borderRadius: 3,
-    backgroundColor: C.goldLight,
-    alignItems: "center", justifyContent: "center",
-    borderWidth: 1.5, borderColor: "rgba(248,172,18,0.22)",
+  pill:    {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 14, paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border,
   },
-  boxOn:   { backgroundColor: C.gold, borderColor: C.gold },
-  emoji:   { fontSize: 24 },
-  label:   { fontFamily: F.medium, fontSize: 10, color: "#333", textAlign: "center" },
-  labelOn: { fontFamily: F.medium, fontSize: 10, color: C.goldDark, textAlign: "center" },
+  pillOn:  { backgroundColor: "#111", borderColor: "#111" },
+  emoji:   { fontSize: 16 },
+  label:   { fontFamily: F.medium, fontSize: Sz.sm, color: C.textSecondary },
+  labelOn: { fontFamily: F.bold, color: "#fff" },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -236,6 +233,96 @@ function filterProductsByTab(products: Product[], activeTab: string, cats: Resta
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Skeleton primitives
+// ─────────────────────────────────────────────────────────────────────────────
+function SkeletonBox({ w, h, r = 10, style }: { w: number | string; h: number; r?: number; style?: any }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: 850, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: 850, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.38, 0.72] });
+  return (
+    <Animated.View
+      style={[{ width: w as any, height: h, borderRadius: r, backgroundColor: C.border, opacity }, style]}
+    />
+  );
+}
+
+function MenuItemSkeleton() {
+  return (
+    <View style={{ width: MENU_ITEM_W }}>
+      <SkeletonBox w="100%" h={168} r={14} />
+      <View style={{ paddingTop: 8, gap: 6 }}>
+        <SkeletonBox w="85%" h={12} r={6} />
+        <SkeletonBox w="55%" h={10} r={6} />
+        <SkeletonBox w="40%" h={16} r={6} />
+      </View>
+    </View>
+  );
+}
+
+function RestaurantPageSkeleton({ onBack }: { onBack: () => void }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      {/* Hero shimmer */}
+      <View style={{ height: HERO_H, overflow: "hidden" }}>
+        <SkeletonBox w="100%" h={HERO_H} r={0} />
+        <View style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 }}>
+          <SafeAreaView>
+            <View style={{ paddingHorizontal: S.screen, paddingTop: 10 }}>
+              <TouchableOpacity
+                style={{
+                  width: 38, height: 38, borderRadius: 19,
+                  backgroundColor: "rgba(255,255,255,0.88)",
+                  alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 1px 6px rgba(0,0,0,0.14)",
+                }}
+                onPress={onBack}
+                activeOpacity={0.8}
+              >
+                <ArrowLeft color="#111" width={20} height={20} />
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </View>
+      </View>
+
+      {/* Info card shimmer */}
+      <View style={{
+        backgroundColor: C.surface, paddingHorizontal: S.screen,
+        paddingTop: 18, paddingBottom: 18, gap: 10,
+        borderBottomWidth: 1, borderBottomColor: C.border,
+      }}>
+        <SkeletonBox w="55%" h={18} r={8} />
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+          <SkeletonBox w={80} h={28} r={6} />
+          <SkeletonBox w={80} h={28} r={6} />
+          <SkeletonBox w={64} h={28} r={6} />
+        </View>
+        <SkeletonBox w="100%" h={11} r={6} />
+        <SkeletonBox w="72%" h={11} r={6} />
+      </View>
+
+      {/* Product grid shimmer */}
+      <View style={{
+        flexDirection: "row", flexWrap: "wrap",
+        paddingHorizontal: S.screen, gap: 8, paddingTop: 16,
+      }}>
+        {[1, 2, 3, 4].map((i) => <MenuItemSkeleton key={i} />)}
+      </View>
+    </View>
+  );
+}
+
+// Categories are the same for all restaurants — cache after first fetch
+let _cachedRestaurantCats: RestaurantCat[] | null = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main screen
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RestaurantDetail() {
@@ -243,30 +330,46 @@ export default function RestaurantDetail() {
   const router   = useRouter();
   const { user } = useAuthStore();
 
-  const [restaurant,     setRestaurant]     = useState<any>(null);
-  const [restaurantCats, setRestaurantCats] = useState<RestaurantCat[]>([]);
-  const [products,       setProducts]       = useState<Product[]>([]);
-  const [loading,        setLoading]        = useState(true);
-  const [liked,          setLiked]          = useState(false);
-  const [activeTab,      setActiveTab]      = useState<string>(ALL_TAB);
-  const [menuSearch,     setMenuSearch]     = useState("");
+  const [restaurant,      setRestaurant]      = useState<any>(null);
+  const [restaurantCats,  setRestaurantCats]  = useState<RestaurantCat[]>([]);
+  const [products,        setProducts]        = useState<Product[]>([]);
+  const [loadingRestaurant, setLoadingRestaurant] = useState(true);
+  const [loadingProducts,   setLoadingProducts]   = useState(true);
+  const [liked,           setLiked]           = useState(false);
+  const [activeTab,       setActiveTab]       = useState<string>(ALL_TAB);
+  const [menuSearch,      setMenuSearch]      = useState("");
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
   // ── Load data ──────────────────────────────────────────────────────────────
   const loadData = useCallback(() => {
-    setLoading(true);
-    Promise.allSettled([
-      api.get(`/boutiques/${id}/`),
-      api.get(`/products/?boutique=${id}`),
-      api.get(`/categories/?boutique_type=restaurant`),
-    ])
-      .then(([b, p, cats]) => {
-        if (b.status === "fulfilled") setRestaurant(b.value);
-        if (p.status === "fulfilled") setProducts(p.value?.results ?? (Array.isArray(p.value) ? p.value : []));
-        if (cats.status === "fulfilled") setRestaurantCats(Array.isArray(cats.value) ? cats.value : []);
-      })
-      .finally(() => setLoading(false));
+    setLoadingRestaurant(true);
+    setLoadingProducts(true);
+
+    // Restaurant info — unblocks the UI as soon as it arrives
+    api.get(`/boutiques/${id}/`)
+      .then(setRestaurant)
+      .catch(() => {})
+      .finally(() => setLoadingRestaurant(false));
+
+    // Products — independent; drives skeleton in the grid
+    api.get(`/products/?boutique=${id}`)
+      .then((p) => setProducts(p?.results ?? (Array.isArray(p) ? p : [])))
+      .catch(() => {})
+      .finally(() => setLoadingProducts(false));
+
+    // Categories — use module-level cache after first fetch
+    if (_cachedRestaurantCats) {
+      setRestaurantCats(_cachedRestaurantCats);
+    } else {
+      api.get(`/categories/?boutique_type=restaurant`)
+        .then((cats) => {
+          const data = Array.isArray(cats) ? cats : [];
+          _cachedRestaurantCats = data;
+          setRestaurantCats(data);
+        })
+        .catch(() => {});
+    }
   }, [id]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -290,12 +393,8 @@ export default function RestaurantDetail() {
   }, []);
 
   // ── Loading / error ────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <View style={s.center}>
-        <ActivityIndicator color={C.gold} size="large" />
-      </View>
-    );
+  if (loadingRestaurant) {
+    return <RestaurantPageSkeleton onBack={() => router.back()} />;
   }
   if (!restaurant) {
     return (
@@ -318,9 +417,27 @@ export default function RestaurantDetail() {
     ? tabProducts.filter((p) => p.title?.toLowerCase().includes(menuSearch.toLowerCase()))
     : tabProducts;
 
-  const floatBg = scrollY.interpolate({
-    inputRange:  [0, HERO_H - 100],
-    outputRange: ["rgba(0,0,0,0)", "rgba(0,0,0,0.50)"],
+  const barBg = scrollY.interpolate({
+    inputRange:  [HERO_H - 80, HERO_H],
+    outputRange: ["rgba(255,255,255,0)", "rgba(255,255,255,1)"],
+    extrapolate: "clamp",
+  });
+
+  const nameOpacity = scrollY.interpolate({
+    inputRange:  [HERO_H * 0.55, HERO_H * 0.82],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+
+  const stickyTabsOpacity = scrollY.interpolate({
+    inputRange:  [HERO_H - 40, HERO_H + 10],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+
+  const stickyTabsTranslateY = scrollY.interpolate({
+    inputRange:  [HERO_H - 40, HERO_H + 10],
+    outputRange: [-10, 0],
     extrapolate: "clamp",
   });
 
@@ -344,12 +461,15 @@ export default function RestaurantDetail() {
       />
 
       {/* ── Floating top bar ── */}
-      <View style={s.floatBar}>
+      <Animated.View style={[s.floatBar, { backgroundColor: barBg }]}>
         <SafeAreaView>
-          <Animated.View style={[s.floatRow, { backgroundColor: floatBg }]}>
+          <View style={s.floatRow}>
             <TouchableOpacity style={s.floatBtn} onPress={() => router.back()} activeOpacity={0.8}>
-              <ArrowLeft color="#fff" width={20} height={20} />
+              <ArrowLeft color="#111" width={20} height={20} />
             </TouchableOpacity>
+            <Animated.Text style={[s.floatTitle, { opacity: nameOpacity }]} numberOfLines={1}>
+              {restaurant.name}
+            </Animated.Text>
             <View style={s.floatRight}>
               {isOwner && (
                 <TouchableOpacity
@@ -361,15 +481,39 @@ export default function RestaurantDetail() {
                 </TouchableOpacity>
               )}
               <TouchableOpacity style={s.floatBtn} onPress={() => setLiked((v) => !v)} activeOpacity={0.8}>
-                <Heart color={liked ? C.gold : "#fff"} fill={liked ? C.gold : "none"} width={19} height={19} />
-              </TouchableOpacity>
-              <TouchableOpacity style={s.floatBtn} activeOpacity={0.8}>
-                <Share2 color="#fff" width={19} height={19} />
+                <Heart color={liked ? C.gold : "#111"} fill={liked ? C.gold : "none"} width={19} height={19} />
               </TouchableOpacity>
             </View>
-          </Animated.View>
+          </View>
         </SafeAreaView>
-      </View>
+
+        {/* Sticky category tabs — slide in once hero is scrolled away */}
+        <Animated.View style={[s.stickyTabsFixed, {
+          opacity: stickyTabsOpacity,
+          transform: [{ translateY: stickyTabsTranslateY }],
+        }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: S.screen, gap: 10, paddingVertical: 12 }}
+          >
+            <CategoryTab
+              label={`Tout (${products.length})`}
+              active={activeTab === ALL_TAB}
+              onPress={() => setActiveTab(ALL_TAB)}
+            />
+            {tabs.map((t) => (
+              <CategoryTab
+                key={t.slug}
+                label={t.name}
+                icon={t.icon}
+                active={activeTab === t.slug}
+                onPress={() => setActiveTab(t.slug)}
+              />
+            ))}
+          </ScrollView>
+        </Animated.View>
+      </Animated.View>
 
       {/* ── Scrollable content ── */}
       <Animated.ScrollView
@@ -380,7 +524,6 @@ export default function RestaurantDetail() {
           { useNativeDriver: false },
         )}
         scrollEventThrottle={16}
-        stickyHeaderIndices={[2]}
       >
 
         {/* ── Hero ── */}
@@ -395,24 +538,25 @@ export default function RestaurantDetail() {
               />
             )}
 
+          {/* Dark gradient scrim so text and tabs are readable */}
           <LinearGradient
-            colors={["rgba(0,0,0,0.15)", "transparent", "rgba(0,0,0,0.70)"]}
-            locations={[0, 0.4, 1]}
+            colors={["rgba(0,0,0,0.08)", "transparent", "rgba(0,0,0,0.72)"]}
+            locations={[0, 0.35, 1]}
             style={StyleSheet.absoluteFill}
           />
 
+          {/* Cuisine badge + restaurant name pinned to hero bottom */}
           <View style={s.heroCaption}>
             <View style={s.cuisineBadge}>
               <Text style={s.cuisineText}>{typeLabel}</Text>
             </View>
+            <Text style={s.heroName}>{restaurant.name}</Text>
           </View>
+
         </View>
 
         {/* ── Info card ── */}
         <View style={s.infoCard}>
-          {/* Name */}
-          <Text style={s.infoName}>{restaurant.name}</Text>
-
           {/* Rating + meta row */}
           <View style={s.heroMeta}>
             <View style={s.heroMetaChip}>
@@ -435,111 +579,62 @@ export default function RestaurantDetail() {
             </View>
           </View>
 
-          {/* Former name row spacer */}
-          <View style={{ height: 12 }} />
-
-          {/* Category chips with emoji */}
-          {restaurantCats.length > 0 && (
-            <View style={s.chipRow}>
-              {restaurantCats.slice(0, 6).map((cat) => (
-                <View key={cat.id} style={s.infoChip}>
-                  <Text style={{ fontSize: 12 }}>{cat.icon ?? getFoodEmoji(cat.name)}</Text>
-                  <Text style={s.infoChipText}>{cat.name}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
           {/* Description */}
           {restaurant.description ? (
             <Text style={s.desc} numberOfLines={3}>{restaurant.description}</Text>
           ) : null}
-
-          {/* Contact buttons */}
-          <View style={s.ctaRow}>
-            {restaurant.whatsapp_number ? (
-              <TouchableOpacity style={s.waBtn} onPress={openWhatsApp} activeOpacity={0.88}>
-                <MessageCircle color="#fff" width={17} height={17} />
-                <Text style={s.waBtnText}>WhatsApp</Text>
-              </TouchableOpacity>
-            ) : null}
-            {restaurant.phone_number ? (
-              <TouchableOpacity style={s.callBtn} onPress={openPhone} activeOpacity={0.88}>
-                <Phone color="#000" width={17} height={17} />
-                <Text style={s.callBtnText}>Appeler</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        </View>
-
-        {/* ── Sticky category tabs ── */}
-        <View style={s.tabsWrap}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: S.screen, gap: 12 }}
-          >
-            <CategoryTab
-              label={`Tout (${products.length})`}
-              active={activeTab === ALL_TAB}
-              onPress={() => setActiveTab(ALL_TAB)}
-            />
-            {tabs.map((t) => (
-              <CategoryTab
-                key={t.slug}
-                label={t.name}
-                icon={t.icon}
-                active={activeTab === t.slug}
-                onPress={() => setActiveTab(t.slug)}
-              />
-            ))}
-          </ScrollView>
         </View>
 
         {/* ── Menu section ── */}
         <View style={s.menuSection}>
-          {/* Search */}
-          <View style={s.searchBox}>
-            <Search color={C.textMuted} width={15} height={15} />
-            <TextInput
-              style={s.searchInput}
-              value={menuSearch}
-              onChangeText={setMenuSearch}
-              placeholder="Rechercher un plat..."
-              placeholderTextColor={C.textMuted}
-              returnKeyType="search"
-            />
-            {menuSearch.length > 0 && (
-              <TouchableOpacity onPress={() => setMenuSearch("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <X color={C.textMuted} width={14} height={14} />
-              </TouchableOpacity>
-            )}
-          </View>
+          {/* Search + controls — hidden while products are loading */}
+          {!loadingProducts && (
+            <>
+              <View style={s.searchBox}>
+                <Search color={C.textMuted} width={15} height={15} />
+                <TextInput
+                  style={s.searchInput}
+                  value={menuSearch}
+                  onChangeText={setMenuSearch}
+                  placeholder="Rechercher un plat..."
+                  placeholderTextColor={C.textMuted}
+                  returnKeyType="search"
+                />
+                {menuSearch.length > 0 && (
+                  <TouchableOpacity onPress={() => setMenuSearch("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <X color={C.textMuted} width={14} height={14} />
+                  </TouchableOpacity>
+                )}
+              </View>
 
-          {/* Owner add button */}
-          {isOwner && (
-            <TouchableOpacity
-              style={s.addPlatBtn}
-              onPress={() => router.push(`/product/create?boutique=${id}` as any)}
-              activeOpacity={0.82}
-            >
-              <Plus color="#000" width={16} height={16} strokeWidth={2.5} />
-              <Text style={s.addPlatText}>Ajouter un plat</Text>
-            </TouchableOpacity>
-          )}
+              {/* Owner add button */}
+              {isOwner && (
+                <TouchableOpacity
+                  style={s.addPlatBtn}
+                  onPress={() => router.push(`/product/create?boutique=${id}` as any)}
+                  activeOpacity={0.82}
+                >
+                  <Plus color="#000" width={16} height={16} strokeWidth={2.5} />
+                  <Text style={s.addPlatText}>Ajouter un plat</Text>
+                </TouchableOpacity>
+              )}
 
-          {/* Section label */}
-          {activeTab !== ALL_TAB && (
-            <Text style={s.sectionLabel}>
-              {tabs.find((t) => t.slug === activeTab)?.name ?? ""}
-              {" "}· {displayedProducts.length} plat{displayedProducts.length !== 1 ? "s" : ""}
-            </Text>
+              {/* Section label */}
+              {activeTab !== ALL_TAB && (
+                <Text style={s.sectionLabel}>
+                  {tabs.find((t) => t.slug === activeTab)?.name ?? ""}
+                  {" "}· {displayedProducts.length} plat{displayedProducts.length !== 1 ? "s" : ""}
+                </Text>
+              )}
+            </>
           )}
         </View>
 
         {/* ── Menu items (2-column card grid) ── */}
         <View style={s.menuList}>
-          {displayedProducts.length === 0 ? (
+          {loadingProducts ? (
+            [1, 2, 3, 4].map((i) => <MenuItemSkeleton key={i} />)
+          ) : displayedProducts.length === 0 ? (
             <Text style={s.empty}>Aucun plat trouvé</Text>
           ) : (
             displayedProducts.map((p) => (
@@ -588,62 +683,54 @@ const s = StyleSheet.create({
   floatBar:  { position: "absolute", top: 0, left: 0, right: 0, zIndex: 20 },
   floatRow:  {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: S.screen, paddingVertical: 8, paddingTop: 10,
+    paddingHorizontal: S.screen, paddingTop: 10, paddingBottom: 0,
   },
   floatRight:{ flexDirection: "row", gap: 8 },
   floatBtn:  {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: "rgba(0,0,0,0.28)",
+    backgroundColor: "rgba(255,255,255,0.88)",
     alignItems: "center", justifyContent: "center",
+    boxShadow: "0 1px 6px rgba(0,0,0,0.14)",
+  },
+  floatTitle: {
+    flex: 1, textAlign: "center",
+    fontFamily: F.bold, fontSize: Sz.base, color: "#111",
+    letterSpacing: -0.3, marginHorizontal: 4,
+  },
+  stickyTabsFixed: {
+    backgroundColor: "#fff",
+    borderBottomWidth: 1, borderBottomColor: C.border,
   },
 
   // ── Hero ─────────────────────────────────────────────────────────────────
-  heroCaption: { position: "absolute", bottom: 16, left: S.screen, right: S.screen },
-  cuisineBadge:{ alignSelf: "flex-start", backgroundColor: C.gold, borderRadius: 3, paddingHorizontal: 10, paddingVertical: 3 },
-  cuisineText: { fontFamily: F.bold, fontSize: 10, color: "#000", textTransform: "capitalize" },
-  heroMeta:    { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
-  heroMetaChip:{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.surface, borderRadius: 3, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: C.border },
-  heroMetaText:{ fontFamily: F.medium, fontSize: Sz.xs, color: C.textSecondary },
+  // Cuisine badge + name pinned to bottom of image
+  heroCaption:  { position: "absolute", bottom: 20, left: S.screen, right: S.screen },
+  cuisineBadge: { alignSelf: "flex-start", backgroundColor: C.gold, borderRadius: 6,
+    paddingHorizontal: 10, paddingVertical: 3, marginBottom: 8 },
+  cuisineText:  { fontFamily: F.bold, fontSize: 10, color: "#000", textTransform: "capitalize" },
+  heroName:     { fontFamily: F.bold, fontSize: 26, color: "#fff", letterSpacing: -0.4,
+    textShadowColor: "rgba(0,0,0,0.5)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
+
+  heroMeta:     { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  heroMetaChip: { flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: C.surface, borderRadius: 6,
+    paddingHorizontal: 8, paddingVertical: 4,
+    borderWidth: 1, borderColor: C.border },
+  heroMetaText: { fontFamily: F.medium, fontSize: Sz.xs, color: C.textSecondary },
 
   // ── Info card ────────────────────────────────────────────────────────────
-  infoCard:    {
+  infoCard:     {
     backgroundColor: C.surface,
-    borderTopLeftRadius: 3, borderTopRightRadius: 3,
-    marginTop: -4, paddingTop: 20,
-    paddingHorizontal: S.screen, paddingBottom: 20,
-  },
-  infoName:    { fontFamily: F.bold, fontSize: 24, color: C.textPrimary, marginBottom: 10 },
-  openBadge:   { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#F0FDF4", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  openDot:     { width: 7, height: 7, borderRadius: 4, backgroundColor: "#22C55E" },
-  openText:    { fontFamily: F.bold, fontSize: Sz.xs, color: "#16A34A" },
-
-  chipRow:     { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
-  infoChip:    {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: C.goldLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
-  },
-  infoChipText:{ fontFamily: F.medium, fontSize: Sz.xs, color: C.goldDark },
-
-  desc:        { fontFamily: F.regular, fontSize: Sz.sm, color: C.textSecondary, lineHeight: 20, marginBottom: 16 },
-
-  ctaRow:      { flexDirection: "row", gap: 10 },
-  waBtn:       {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, height: 48, backgroundColor: C.whatsapp, borderRadius: 12,
-  },
-  waBtnText:   { fontFamily: F.bold, fontSize: Sz.base, color: "#fff" },
-  callBtn:     {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, height: 48, backgroundColor: C.gold, borderRadius: 12,
-  },
-  callBtnText: { fontFamily: F.bold, fontSize: Sz.base, color: "#000" },
-
-  // ── Sticky tabs ──────────────────────────────────────────────────────────
-  tabsWrap:    {
-    backgroundColor: C.surface, paddingTop: 14, paddingBottom: 10,
+    paddingTop: 16, paddingHorizontal: S.screen, paddingBottom: 16,
     borderBottomWidth: 1, borderBottomColor: C.border,
-    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
   },
+  openBadge:    { flexDirection: "row", alignItems: "center", gap: 5,
+    backgroundColor: "#F0FDF4", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  openDot:      { width: 7, height: 7, borderRadius: 4, backgroundColor: "#22C55E" },
+  openText:     { fontFamily: F.bold, fontSize: Sz.xs, color: "#16A34A" },
+
+  desc:         { fontFamily: F.regular, fontSize: Sz.sm, color: C.textSecondary,
+    lineHeight: 20, marginTop: 8 },
 
   // ── Menu section ─────────────────────────────────────────────────────────
   menuSection: { backgroundColor: C.surface, paddingHorizontal: S.screen, paddingTop: 14, paddingBottom: 8 },

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Image, TextInput, Linking, Alert, Dimensions, RefreshControl, Animated,
@@ -9,7 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Search, X, Phone, MessageCircle, MapPin, Star,
-  Navigation, Zap, Truck, ArrowRight,
+  Navigation, Zap, Truck, ArrowRight, Users,
 } from "react-native-feather";
 import api from "@/lib/api";
 import { C, F, Sz, S, R } from "@/constants/theme";
@@ -234,9 +235,66 @@ function SkeletonList({ count = 5 }: { count?: number }) {
   );
 }
 
+// ─── Car Rapide card ──────────────────────────────────────────────────────────
+function CarRapideCard({ item }: { item: any }) {
+  const phone = item.phone ?? item.phone_number ?? "";
+  const call  = () => phone && Alert.alert(`Appeler ${item.name}`, undefined, [
+    { text: "Annuler", style: "cancel" },
+    { text: "Appeler", onPress: () => Linking.openURL(`tel:${phone}`) },
+  ]);
+  const wa = () => phone && Linking.openURL(`https://wa.me/${phone.replace(/\D/g, "")}`).catch(() => {});
+
+  return (
+    <View style={cr.card}>
+      <Avatar uri={item.avatar_url} name={item.name} size={50} />
+      <View style={cr.info}>
+        <Text style={cr.name} numberOfLines={1}>{item.name}</Text>
+        <View style={cr.metaRow}>
+          <Star color="#F59E0B" fill="#F59E0B" width={11} height={11} />
+          <Text style={cr.rating}>{item.rating?.toFixed(1) ?? "5.0"}</Text>
+          <Text style={cr.sep}>·</Text>
+          <Text style={cr.meta}>Car Rapide</Text>
+        </View>
+        {item.wilaya ? (
+          <View style={cr.zoneRow}>
+            <MapPin color={INK3} width={10} height={10} />
+            <Text style={cr.zone}>{item.wilaya}</Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={cr.btns}>
+        <TouchableOpacity style={cr.waBtn} onPress={wa} activeOpacity={0.8}>
+          <MessageCircle color="#fff" width={15} height={15} />
+        </TouchableOpacity>
+        <TouchableOpacity style={cr.callBtn} onPress={call} activeOpacity={0.8}>
+          <Phone color="#fff" width={15} height={15} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+const cr = StyleSheet.create({
+  card:    { flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: "#fff", borderRadius: 16, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: BDR },
+  info:    { flex: 1, gap: 4 },
+  name:    { fontFamily: F.bold, fontSize: 14, color: INK },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  rating:  { fontFamily: F.bold, fontSize: 11, color: "#D97706" },
+  sep:     { color: INK3, fontSize: 11 },
+  meta:    { fontFamily: F.regular, fontSize: 11, color: INK3 },
+  zoneRow: { flexDirection: "row", alignItems: "center", gap: 3 },
+  zone:    { fontFamily: F.medium, fontSize: 11, color: INK3 },
+  btns:    { flexDirection: "column", gap: 7 },
+  waBtn:   { width: 36, height: 36, borderRadius: R.full,
+    backgroundColor: "#25D366", alignItems: "center", justifyContent: "center" },
+  callBtn: { width: 36, height: 36, borderRadius: R.full,
+    backgroundColor: INK, alignItems: "center", justifyContent: "center" },
+});
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Livraison() {
-  const [tab,         setTab]         = useState<"livraison" | "voyage">("livraison");
+  const [tab,         setTab]         = useState<"livreurs" | "voyage" | "carrapide">("livreurs");
 
   // Livraison state
   const [livreurs,    setLivreurs]    = useState<any[]>([]);
@@ -257,13 +315,19 @@ export default function Livraison() {
   const [voyageLoad,     setVoyageLoad]     = useState(false);
   const [voyageSearched, setVoyageSearched] = useState(false);
 
+  // Car Rapide state
+  const [carrapides,    setCarrapides]    = useState<any[]>([]);
+  const [carrapideLoad, setCarrapideLoad] = useState(false);
+  const [carrapideNearby, setCarrapideNearby] = useState(false);
+
   // Location — initialise from store so livraison doesn't wait for GPS again
   const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(storedCoords);
   const [inMR,       setInMR]       = useState<boolean | null>(storedInMR);
   const coordsRef = useRef<{ latitude: number; longitude: number } | null>(storedCoords);
-  const [mapReady, setMapReady] = useState(false);
-  const mapRef    = useRef<MapView>(null);
-  const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [mapReady,   setMapReady]   = useState(false);
+  const [mapReadyCR, setMapReadyCR] = useState(false);
+  const mapRef   = useRef<MapView>(null);
+  const mapRefCR = useRef<MapView>(null);
 
   // ── Livreurs fetch ──────────────────────────────────────────────────────────
   const fetchLivreurs = useCallback(async () => {
@@ -296,80 +360,105 @@ export default function Livraison() {
     }
   }, []);
 
+  // ── Car Rapide fetch ────────────────────────────────────────────────────────
+  const fetchCarrapides = useCallback(async () => {
+    setCarrapideLoad(true);
+    try {
+      const c = coordsRef.current;
+      let data: any[] = [];
+      let nearby = false;
+      if (c) {
+        try {
+          data = await api.get<any[]>(`/maurigos/?lat=${c.latitude}&lng=${c.longitude}&radius=15`);
+          nearby = data.length > 0;
+        } catch {}
+      }
+      if (data.length === 0) {
+        data = await api.get<any[]>("/maurigos/");
+      }
+      setCarrapides(data);
+      setCarrapideNearby(nearby);
+    } catch {
+      setCarrapides([]);
+    } finally {
+      setCarrapideLoad(false);
+    }
+  }, []);
+
   // ── Location on mount ───────────────────────────────────────────────────────
   useEffect(() => {
     console.log("[Livraison] 📍 mount — storedCoords:", storedCoords ? `${storedCoords.latitude},${storedCoords.longitude}` : "null", "| storedInMR:", storedInMR);
     // If home screen already detected location, skip GPS entirely
     if (storedInMR !== null && storedCoords) {
       console.log("[Livraison] using cached location, skipping GPS");
-      fetchLivreurs();
+      if (storedInMR !== false) fetchLivreurs();
       return;
     }
     let mounted = true;
     (async () => {
+      let insideMR = true; // default: fetch unless we confirm outside
       try {
         console.log("[Livraison] checking location permission…");
-        // Check first, then request if undetermined
         let { status } = await Location.getForegroundPermissionsAsync();
-        console.log("[Livraison] location permission:", status);
         if (status === "undetermined") {
-          console.log("[Livraison] requesting location permission…");
           const result = await Location.requestForegroundPermissionsAsync();
           status = result.status;
-          console.log("[Livraison] permission after request:", status);
         }
         if (status === "granted") {
-          console.log("[Livraison] getting GPS position…");
           const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
           const c = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
           console.log("[Livraison] GPS ✅", c.latitude, c.longitude);
           coordsRef.current = c;
+          const inside = isInMauritania(c.latitude, c.longitude);
+          insideMR = inside;
+          console.log("[Livraison] inMauritania:", inside);
           if (mounted) {
             setUserCoords(c);
-            const inside = isInMauritania(c.latitude, c.longitude);
-            console.log("[Livraison] inMauritania:", inside);
             setInMR(inside);
-            if (inside) {
+            if (!inside) {
+              storeSetLocation(c, false, null);
+            } else {
               try {
                 const [place] = await Location.reverseGeocodeAsync(c);
                 const city = place?.city ?? place?.subregion ?? place?.region ?? "";
-                console.log("[Livraison] reverse geocode city:", city);
-                if (city && mounted) {
-                  setOrigin(city);
-                  storeSetLocation(c, inside, city);
-                } else {
-                  storeSetLocation(c, inside, null);
-                }
+                if (city && mounted) setOrigin(city);
+                storeSetLocation(c, true, city || null);
               } catch (e: any) {
                 console.warn("[Livraison] reverseGeocode failed:", e?.message);
-                storeSetLocation(c, inside, null);
+                storeSetLocation(c, true, null);
               }
-            } else {
-              storeSetLocation(c, false, null);
             }
           }
         } else {
-          // Permission denied — still show the livreurs list without map location
           console.warn("[Livraison] location permission denied:", status);
-          if (mounted) setInMR(true); // assume Mauritania, show the list
+          if (mounted) setInMR(true);
         }
       } catch (e: any) {
-        console.error("[Livraison] location error ❌", e?.message, e?.stack?.slice(0, 200));
+        console.error("[Livraison] location error ❌", e?.message);
         if (mounted) setInMR(null);
       }
-      fetchLivreurs();
+      if (insideMR) fetchLivreurs();
     })();
     return () => { mounted = false; };
   }, [fetchLivreurs]);
 
-  useEffect(() => {
-    if (tab !== "livraison") {
-      if (pollRef.current) clearInterval(pollRef.current);
-      return;
-    }
-    pollRef.current = setInterval(fetchLivreurs, POLL_MS);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [fetchLivreurs, tab]);
+  // ── Poll only while this screen is focused AND user is in Mauritania ─────────
+  useFocusEffect(
+    useCallback(() => {
+      // No polling outside Mauritania — service is MR-only
+      if (inMR === false) return () => {};
+      if (tab === "livreurs") {
+        const id = setInterval(fetchLivreurs, POLL_MS);
+        return () => clearInterval(id);
+      }
+      if (tab === "carrapide") {
+        fetchCarrapides();
+        const id = setInterval(fetchCarrapides, POLL_MS);
+        return () => clearInterval(id);
+      }
+      return () => {};
+    }, [tab, inMR, fetchLivreurs, fetchCarrapides])
+  );
 
   // ── Voyageurs search ────────────────────────────────────────────────────────
   // Synchronously reset to loading before paint so old results don't flash
@@ -386,10 +475,21 @@ export default function Livraison() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await api.get<any[]>(
-          `/auth/voyageurs/?depart=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`
-        );
-        if (!cancelled) setVoyageurs(Array.isArray(data) ? data : []);
+        // Fetch both directions — long voyage A→B also covers B→A
+        const [fwd, rev] = await Promise.allSettled([
+          api.get<any[]>(`/auth/voyageurs/?depart=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`),
+          api.get<any[]>(`/auth/voyageurs/?depart=${encodeURIComponent(destination)}&destination=${encodeURIComponent(origin)}`),
+        ]);
+        if (cancelled) return;
+        const fwdData = fwd.status === "fulfilled" && Array.isArray(fwd.value) ? fwd.value : [];
+        const revData = rev.status === "fulfilled" && Array.isArray(rev.value) ? rev.value : [];
+        // Merge, deduplicate by id
+        const seen = new Set<string | number>();
+        const merged: any[] = [];
+        for (const item of [...fwdData, ...revData]) {
+          if (!seen.has(item.id)) { seen.add(item.id); merged.push(item); }
+        }
+        setVoyageurs(merged);
       } catch {
         if (!cancelled) setVoyageurs([]);
       } finally {
@@ -398,6 +498,7 @@ export default function Livraison() {
     })();
     return () => { cancelled = true; };
   }, [origin, destination]);
+
 
   const centerOnUser = async () => {
     if (userCoords) {
@@ -453,8 +554,9 @@ export default function Livraison() {
           {/* Segmented tab */}
           <View style={s.tabBar}>
             {([
-              { key: "livraison", label: "Livraison", Icon: Truck },
-              { key: "voyage",    label: "Voyage",    Icon: Navigation },
+              { key: "livreurs",   label: "Livreurs",    Icon: Truck      },
+              { key: "voyage",     label: "Long Voyage",  Icon: Navigation },
+              { key: "carrapide",  label: "Car Rapide",   Icon: Users      },
             ] as const).map(({ key, label, Icon }) => (
               <TouchableOpacity
                 key={key}
@@ -462,14 +564,14 @@ export default function Livraison() {
                 onPress={() => setTab(key)}
                 activeOpacity={0.85}
               >
-                <Icon color={tab === key ? "#fff" : INK2} width={13} height={13} />
+                <Icon color={tab === key ? "#fff" : INK2} width={12} height={12} />
                 <Text style={[s.tabText, tab === key && s.tabTextOn]}>{label}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Search — livraison only */}
-          {tab === "livraison" && (
+          {/* Search — livreurs only */}
+          {tab === "livreurs" && (
             <View style={s.searchRow}>
               <View style={s.searchBox}>
                 <Search color={INK3} width={16} height={16} />
@@ -496,8 +598,8 @@ export default function Livraison() {
         </SafeAreaView>
       </View>
 
-      {/* ── Livraison tab ── */}
-      {tab === "livraison" && (
+      {/* ── Livreurs tab ── */}
+      {tab === "livreurs" && (
         outsideMR
           ? <OutsideMR />
           : (
@@ -675,6 +777,93 @@ export default function Livraison() {
                 )
           )}
         </ScrollView>
+      )}
+
+      {/* ── Car Rapide tab ── */}
+      {tab === "carrapide" && (
+        outsideMR
+          ? <OutsideMR />
+          : (
+            <ScrollView
+              style={s.body}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: S.tabBar + 20 }}
+              refreshControl={
+                <RefreshControl refreshing={carrapideLoad}
+                  onRefresh={fetchCarrapides} tintColor={Y} />
+              }
+            >
+              {/* Map */}
+              <View style={s.mapSection}>
+                <View style={s.mapHeader}>
+                  <Navigation color={Y} width={14} height={14} />
+                  <Text style={s.mapTitle}>
+                    {carrapideNearby ? "Près de vous" : "Disponibles"}
+                  </Text>
+                  {userCoords && (
+                    <TouchableOpacity style={s.locateBtn} onPress={centerOnUser} activeOpacity={0.8}>
+                      <Navigation color={C.goldDark} width={11} height={11} />
+                      <Text style={s.locateBtnText}>Ma position</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={s.mapWrap}>
+                  <MapView
+                    ref={mapRefCR}
+                    style={StyleSheet.absoluteFill}
+                    provider={PROVIDER_DEFAULT}
+                    initialRegion={mapRegion}
+                    showsUserLocation={!!userCoords}
+                    showsMyLocationButton={false}
+                    showsCompass={false}
+                    onMapReady={() => setMapReadyCR(true)}
+                  >
+                    {mapReadyCR && userCoords && (
+                      <Circle center={userCoords} radius={2000}
+                        fillColor="rgba(248,172,18,0.08)"
+                        strokeColor="rgba(248,172,18,0.35)" strokeWidth={1.5} />
+                    )}
+                    {mapReadyCR && carrapides.map(c =>
+                      c.latitude && c.longitude ? (
+                        <Marker key={c.id}
+                          coordinate={{ latitude: c.latitude, longitude: c.longitude }}
+                          anchor={{ x: 0.5, y: 0.5 }}>
+                          <View style={mk.pin}>
+                            <Text style={mk.emoji}>🚕</Text>
+                          </View>
+                        </Marker>
+                      ) : null,
+                    )}
+                  </MapView>
+                  <View style={s.liveBadge}>
+                    <View style={s.liveDot} />
+                    <Text style={s.liveText}>EN DIRECT</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Result hint */}
+              {!carrapideLoad && (
+                <View style={s.resultRow}>
+                  {carrapideNearby
+                    ? <Text style={s.resultText}>{carrapides.length} car{carrapides.length !== 1 ? "s" : ""} rapide{carrapides.length !== 1 ? "s" : ""} proche{carrapides.length !== 1 ? "s" : ""}</Text>
+                    : <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                        <Zap color={Y} width={12} height={12} fill={Y} />
+                        <Text style={s.suggestText}>Suggestions disponibles</Text>
+                      </View>}
+                </View>
+              )}
+
+              {/* Cards */}
+              {carrapideLoad
+                ? <SkeletonList />
+                : carrapides.length === 0
+                  ? <Text style={s.empty}>Aucun Car Rapide disponible</Text>
+                  : <View style={{ paddingHorizontal: S.screen }}>
+                      {carrapides.map(c => <CarRapideCard key={c.id} item={c} />)}
+                    </View>}
+            </ScrollView>
+          )
       )}
     </View>
   );

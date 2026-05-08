@@ -16,6 +16,7 @@ type User = {
   vehicle_type?: string;
   trajet_depart?: string;
   trajet_destination?: string;
+  wilaya?: string;
 };
 
 type AuthStore = {
@@ -30,11 +31,12 @@ type AuthStore = {
   pendingVehicle:      string;
   pendingTrajetDepart: string;
   pendingTrajetDest:   string;
+  pendingWilaya:       string;
 
   login:      (access: string, refresh: string, user: User) => Promise<void>;
   logout:     () => Promise<void>;
   setUser:    (user: User) => void;
-  setPending: (phone: string, first?: string, last?: string, role?: string, vehicle?: string, trajetDepart?: string, trajetDest?: string) => void;
+  setPending: (phone: string, first?: string, last?: string, role?: string, vehicle?: string, trajetDepart?: string, trajetDest?: string, wilaya?: string) => void;
   clearPending: () => void;
   bootstrap:    () => Promise<void>;
 };
@@ -51,6 +53,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   pendingVehicle:      "",
   pendingTrajetDepart: "",
   pendingTrajetDest:   "",
+  pendingWilaya:       "",
 
   login: async (access, refresh, user) => {
     await SecureStore.setItemAsync("access_token", access);
@@ -66,7 +69,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   setUser: (user) => set({ user }),
 
-  setPending: (phone, first = "", last = "", role = "vendeur", vehicle = "", trajetDepart = "", trajetDest = "") =>
+  setPending: (phone, first = "", last = "", role = "vendeur", vehicle = "", trajetDepart = "", trajetDest = "", wilaya = "") =>
     set({
       pendingPhone:        phone,
       pendingFirst:        first,
@@ -75,12 +78,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
       pendingVehicle:      vehicle,
       pendingTrajetDepart: trajetDepart,
       pendingTrajetDest:   trajetDest,
+      pendingWilaya:       wilaya,
     }),
 
   clearPending: () => set({
     pendingPhone: "", pendingFirst: "", pendingLast: "",
     pendingRole: "vendeur", pendingVehicle: "",
-    pendingTrajetDepart: "", pendingTrajetDest: "",
+    pendingTrajetDepart: "", pendingTrajetDest: "", pendingWilaya: "",
   }),
 
   bootstrap: async () => {
@@ -105,6 +109,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
             vehicle_type:       profile.vehicle_type ?? "",
             trajet_depart:      profile.trajet_depart ?? "",
             trajet_destination: profile.trajet_destination ?? "",
+            wilaya:             profile.wilaya ?? "",
           }});
         } catch {
           await SecureStore.deleteItemAsync("access_token");

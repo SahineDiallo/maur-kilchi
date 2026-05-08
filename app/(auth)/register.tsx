@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, ArrowRight, ChevronDown, Check, ShoppingBag, Truck, Navigation } from "react-native-feather";
+import { ArrowLeft, ArrowRight, ChevronDown, Check, ArrowRight as Arrow } from "react-native-feather";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { C, F, FA, Sz, R, S } from "@/constants/theme";
@@ -23,6 +23,40 @@ const BDR  = "rgba(0,0,0,0.08)";
 const INK  = "#111111";
 const INK3 = "#999999";
 const Y    = "#F5C400";
+
+type Role = "vendeur" | "livreur" | "voyageur" | "maurigo";
+
+// ── Role definitions ───────────────────────────────────────────────────────────
+const ROLES: { key: Role; emoji: string; label: string; labelAr: string; desc: string }[] = [
+  {
+    key: "vendeur",
+    emoji: "🏪",
+    label: "Vendeur",
+    labelAr: "بائع",
+    desc: "Créez et gérez votre boutique en ligne. Vendez vos produits à toute la Mauritanie.",
+  },
+  {
+    key: "livreur",
+    emoji: "🏍️",
+    label: "Livreur",
+    labelAr: "موصّل",
+    desc: "Devenez livreur indépendant. Recevez des commandes de livraison dans votre zone.",
+  },
+  {
+    key: "voyageur",
+    emoji: "🚌",
+    label: "Long Voyage",
+    labelAr: "سفر طويل",
+    desc: "Proposez vos trajets longue distance entre villes et transportez des colis ou passagers.",
+  },
+  {
+    key: "maurigo",
+    emoji: "🚕",
+    label: "Car Rapide",
+    labelAr: "كار رابيد",
+    desc: "Proposez vos courses en Car Rapide dans votre wilaya. Les clients vous trouvent et vous contactent directement.",
+  },
+];
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 const nameSchema  = z.object({
@@ -84,7 +118,7 @@ const fl = StyleSheet.create({
   err:     { fontFamily: F.regular, fontSize: Sz.xs, color: C.error, marginTop: 3 },
 });
 
-// ── Phone input with focus state ───────────────────────────────────────────────
+// ── Phone input ────────────────────────────────────────────────────────────────
 function PhoneInput({ country, onCountryPress, control, focused, setFocused }: any) {
   return (
     <View style={[pi.box, focused && pi.boxFocused]}>
@@ -129,27 +163,129 @@ const pi = StyleSheet.create({
     fontFamily: F.bold, fontSize: 20, color: INK, letterSpacing: 2 },
 });
 
+// ── Role pick screen ───────────────────────────────────────────────────────────
+function RolePickScreen({ onSelect, onSignIn }: { onSelect: (r: Role) => void; onSignIn: () => void }) {
+  const router = useRouter();
+  return (
+    <View style={rp.root}>
+      <LinearGradient
+        colors={["#FFE14D", "#FFF5B0", "rgba(255,248,160,0.15)", "rgba(255,255,255,0)"]}
+        locations={[0, 0.38, 0.62, 1]}
+        style={rp.wash}
+        pointerEvents="none"
+      />
+      <SafeAreaView style={{ flex: 1 }}>
+        <TouchableOpacity style={rp.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <View style={rp.backCircle}>
+            <ArrowLeft color={INK} width={20} height={20} />
+          </View>
+        </TouchableOpacity>
+
+        <ScrollView
+          contentContainerStyle={rp.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={rp.title}>Créer un compte</Text>
+          <Text style={rp.sub}>Choisissez votre type de compte pour commencer.</Text>
+
+          {ROLES.map((r) => (
+            <TouchableOpacity
+              key={r.key}
+              style={rp.card}
+              onPress={() => onSelect(r.key)}
+              activeOpacity={0.85}
+            >
+              <View style={rp.cardLeft}>
+                <Text style={rp.emoji}>{r.emoji}</Text>
+              </View>
+              <View style={rp.cardBody}>
+                <View style={rp.labelRow}>
+                  <Text style={rp.label}>{r.label}</Text>
+                  <Text style={rp.labelAr}>{r.labelAr}</Text>
+                </View>
+                <Text style={rp.desc}>{r.desc}</Text>
+              </View>
+              <Arrow color={INK3} width={16} height={16} />
+            </TouchableOpacity>
+          ))}
+
+          <View style={rp.loginRow}>
+            <Text style={rp.loginText}>Déjà un compte ?  </Text>
+            <TouchableOpacity onPress={onSignIn}>
+              <Text style={rp.link}>Se connecter</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
+const rp = StyleSheet.create({
+  root:       { flex: 1, backgroundColor: "#fff" },
+  wash:       { position: "absolute", top: 0, left: 0, right: 0, height: 380, zIndex: 0 },
+  backBtn:    { paddingTop: S.px16, paddingLeft: S.screen, zIndex: 10 },
+  backCircle: { width: 42, height: 42, borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.75)", borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.85)", alignItems: "center", justifyContent: "center",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)" },
+  scroll:     { paddingHorizontal: S.screen, paddingBottom: 48, paddingTop: 12 },
+  title:      { fontFamily: F.bold, fontSize: Sz["2xl"], color: INK, marginBottom: 6 },
+  sub:        { fontFamily: F.regular, fontSize: Sz.base, color: INK3, marginBottom: 24 },
+  card:       { flexDirection: "row", alignItems: "center", gap: 14,
+    backgroundColor: "#fff", borderRadius: 18, padding: 16, marginBottom: 12,
+    borderWidth: 1.5, borderColor: BDR,
+    boxShadow: "0 2px 12px rgba(0,0,0,0.06)" },
+  cardLeft:   { width: 52, height: 52, borderRadius: 14, backgroundColor: "rgba(245,196,0,0.12)",
+    alignItems: "center", justifyContent: "center" },
+  emoji:      { fontSize: 26 },
+  cardBody:   { flex: 1, gap: 4 },
+  labelRow:   { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  label:      { fontFamily: F.bold, fontSize: Sz.base, color: INK },
+  labelAr:    { fontFamily: FA.regular, fontSize: Sz.sm, color: C.goldDark },
+  desc:       { fontFamily: F.regular, fontSize: Sz.xs, color: INK3, lineHeight: 17 },
+  loginRow:   { flexDirection: "row", justifyContent: "center", marginTop: 24 },
+  loginText:  { fontFamily: F.regular, fontSize: Sz.base, color: INK3 },
+  link:       { fontFamily: F.bold, fontSize: Sz.base, color: INK,
+    textDecorationLine: "underline", textDecorationColor: Y },
+});
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function Register() {
-  const router    = useRouter();
+  const router = useRouter();
   const { setPending } = useAuthStore();
 
-  const [role,         setRole]         = useState<"vendeur" | "livreur" | "voyageur">("vendeur");
+  const [phase,        setPhase]        = useState<"role-pick" | "form">("role-pick");
+  const [role,         setRole]         = useState<Role>("vendeur");
   const [country,      setCountry]      = useState(DEFAULT_COUNTRY);
   const [sheet,        setSheet]        = useState(false);
   const [step,         setStep]         = useState<1 | 2 | 3>(1);
   const [vehicle,      setVehicle]      = useState("");
   const [trajetDepart, setTrajetDepart] = useState("");
   const [trajetDest,   setTrajetDest]   = useState("");
+  const [wilaya,       setWilaya]       = useState("");
   const [err,          setErr]          = useState("");
   const [phoneFocused, setPhoneFocused] = useState(false);
 
   const nameForm  = useForm<NameForm>({ resolver: zodResolver(nameSchema) });
   const phoneForm = useForm<PhoneForm>({ resolver: zodResolver(phoneSchema) });
 
-  const handleRoleChange = (r: "vendeur" | "livreur" | "voyageur") => {
-    setRole(r); setStep(1); setVehicle(""); setTrajetDepart(""); setTrajetDest(""); setErr("");
-    nameForm.reset(); phoneForm.reset();
+  const selectRole = (r: Role) => {
+    setRole(r);
+    setStep(1);
+    setVehicle("");
+    setTrajetDepart("");
+    setTrajetDest("");
+    setWilaya("");
+    setErr("");
+    nameForm.reset();
+    phoneForm.reset();
+    setPhase("form");
+  };
+
+  const handleBack = () => {
+    if (phase === "role-pick") { router.back(); return; }
+    if (step === 1) { setPhase("role-pick"); return; }
+    setStep((p) => (p - 1) as any);
   };
 
   const goStep2 = async () => {
@@ -158,19 +294,19 @@ export default function Register() {
   };
 
   const goStep3 = async () => {
-    if (role === "livreur" || role === "voyageur") {
-      const ok = await phoneForm.trigger(["phone"]);
-      if (ok) setStep(3);
-    }
+    const ok = await phoneForm.trigger(["phone"]);
+    if (ok) setStep(3);
   };
 
-  const totalSteps = role === "vendeur" ? 2 : 3;
+  const needsStep3 = role === "livreur" || role === "voyageur" || role === "maurigo";
+  const totalSteps = needsStep3 ? 3 : 2;
 
   const onSubmit = async () => {
     const phoneValid = await phoneForm.trigger(["phone"]);
     if (!phoneValid) return;
     if (role === "livreur" && !vehicle) return;
     if (role === "voyageur" && (!trajetDepart || !trajetDest)) return;
+    if (role === "maurigo" && !wilaya) return;
 
     setErr("");
     const { firstName, lastName } = nameForm.getValues();
@@ -183,9 +319,10 @@ export default function Register() {
         firstName.trim(),
         lastName.trim(),
         role,
-        role === "livreur" ? vehicle : "",
-        role === "voyageur" ? trajetDepart : "",
-        role === "voyageur" ? trajetDest   : "",
+        role === "livreur"   ? vehicle      : "",
+        role === "voyageur"  ? trajetDepart : "",
+        role === "voyageur"  ? trajetDest   : "",
+        role === "maurigo"   ? wilaya       : "",
       );
       router.push("/(auth)/verify");
     } catch (e: any) {
@@ -193,11 +330,23 @@ export default function Register() {
     }
   };
 
-  const isStep2Submitting = phoneForm.formState.isSubmitting;
+  const submitting = phoneForm.formState.isSubmitting;
+
+  // ── Role pick phase ─────────────────────────────────────────────────────────
+  if (phase === "role-pick") {
+    return (
+      <RolePickScreen
+        onSelect={selectRole}
+        onSignIn={() => router.push("/(auth)/sign-in")}
+      />
+    );
+  }
+
+  // ── Form phase ──────────────────────────────────────────────────────────────
+  const roleInfo = ROLES.find(r => r.key === role)!;
 
   return (
     <View style={s.root}>
-      {/* Yellow gradient wash */}
       <LinearGradient
         colors={["#FFE14D", "#FFF5B0", "rgba(255,248,160,0.15)", "rgba(255,255,255,0)"]}
         locations={[0, 0.38, 0.62, 1]}
@@ -206,21 +355,13 @@ export default function Register() {
       />
 
       <SafeAreaView style={{ flex: 1 }}>
-        {/* Back */}
-        <TouchableOpacity
-          style={s.backBtn}
-          onPress={() => step === 1 ? router.back() : setStep((p) => (p - 1) as any)}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={s.backBtn} onPress={handleBack} activeOpacity={0.7}>
           <View style={s.backCircle}>
             <ArrowLeft color={INK} width={20} height={20} />
           </View>
         </TouchableOpacity>
 
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView
             contentContainerStyle={s.scroll}
             keyboardShouldPersistTaps="handled"
@@ -234,49 +375,18 @@ export default function Register() {
               <Text style={s.stepText}>{step} / {totalSteps}</Text>
             </View>
 
-            {/* Card */}
             <View style={s.card}>
-
-              {/* ── Role tabs (step 1 only) ── */}
-              {step === 1 && (
-                <>
-                  <View style={s.tabBar}>
-                    {(["vendeur", "livreur", "voyageur"] as const).map((r) => {
-                      const Icon = r === "vendeur" ? ShoppingBag : r === "livreur" ? Truck : Navigation;
-                      const on   = role === r;
-                      return (
-                        <TouchableOpacity
-                          key={r}
-                          style={[s.tabBtn, on && s.tabBtnOn]}
-                          onPress={() => handleRoleChange(r)}
-                          activeOpacity={0.8}
-                        >
-                          <Icon color={on ? INK : INK3} width={18} height={18} />
-                          <Text style={[s.tabLabel, on && s.tabLabelOn]}>
-                            {r === "vendeur" ? "Vendeur" : r === "livreur" ? "Livreur" : "Voyage"}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-
-                  <View style={s.roleDesc}>
-                    <Text style={s.roleDescText}>
-                      {role === "vendeur"
-                        ? "Créez et gérez votre boutique en ligne sur Maurikilchi."
-                        : role === "livreur"
-                        ? "Devenez livreur et recevez des commandes dans votre zone."
-                        : "Proposez vos trajets longue distance et transportez des colis."}
-                    </Text>
-                  </View>
-                </>
-              )}
+              {/* Role badge */}
+              <View style={s.roleBadge}>
+                <Text style={s.roleBadgeEmoji}>{roleInfo.emoji}</Text>
+                <Text style={s.roleBadgeLabel}>{roleInfo.label}</Text>
+              </View>
 
               {/* ── Step 1: Name ── */}
               {step === 1 && (
                 <>
-                  <Text style={s.cardTitle}>Créer un compte</Text>
-                  <Text style={s.cardSub}>Comment vous appelez-vous ?</Text>
+                  <Text style={s.cardTitle}>Comment vous appelez-vous ?</Text>
+                  <Text style={s.cardSub}>Entrez votre nom complet</Text>
 
                   <Controller control={nameForm.control} name="firstName" render={({ field, fieldState }) => (
                     <FloatInput labelFr="Prénom" labelAr="الاسم الأول"
@@ -316,7 +426,7 @@ export default function Register() {
 
                   {err ? <Text style={s.errText}>{err}</Text> : null}
 
-                  {(role === "livreur" || role === "voyageur") ? (
+                  {needsStep3 ? (
                     <TouchableOpacity style={s.btn} onPress={goStep3} activeOpacity={0.85}>
                       <View style={s.btnInner}>
                         <Text style={s.btnText}>Continuer</Text>
@@ -325,77 +435,23 @@ export default function Register() {
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
-                      style={[s.btn, isStep2Submitting && s.btnOff]}
+                      style={[s.btn, submitting && s.btnOff]}
                       onPress={onSubmit}
-                      disabled={isStep2Submitting}
+                      disabled={submitting}
                       activeOpacity={0.85}
                     >
-                      {isStep2Submitting ? (
-                        <ActivityIndicator color={Y} />
-                      ) : (
-                        <View style={s.btnInner}>
-                          <Text style={s.btnText}>Recevoir le code</Text>
-                          <ArrowRight color={Y} width={18} height={18} />
-                        </View>
-                      )}
+                      {submitting
+                        ? <ActivityIndicator color={Y} />
+                        : <View style={s.btnInner}>
+                            <Text style={s.btnText}>Recevoir le code</Text>
+                            <ArrowRight color={Y} width={18} height={18} />
+                          </View>}
                     </TouchableOpacity>
                   )}
                 </>
               )}
 
-              {/* ── Step 3: Trajet (voyageur only) ── */}
-              {step === 3 && role === "voyageur" && (
-                <>
-                  <Text style={s.cardTitle}>Votre trajet</Text>
-                  <Text style={s.cardSub}>Choisissez votre itinéraire habituel</Text>
-
-                  <VillePicker
-                    label="Ville de départ"
-                    placeholder="Sélectionner le départ"
-                    value={trajetDepart}
-                    onChange={setTrajetDepart}
-                  />
-
-                  <View style={s.trajetArrow}>
-                    <Text style={s.trajetArrowText}>↓</Text>
-                  </View>
-
-                  <VillePicker
-                    label="Ville d'arrivée"
-                    placeholder="Sélectionner la destination"
-                    value={trajetDest}
-                    onChange={setTrajetDest}
-                  />
-
-                  {trajetDepart && trajetDest && (
-                    <View style={s.trajetPreview}>
-                      <Text style={s.trajetPreviewText}>
-                        {trajetDepart}  →  {trajetDest}
-                      </Text>
-                    </View>
-                  )}
-
-                  {err ? <Text style={s.errText}>{err}</Text> : null}
-
-                  <TouchableOpacity
-                    style={[s.btn, (!trajetDepart || !trajetDest || isStep2Submitting) && s.btnOff]}
-                    onPress={onSubmit}
-                    disabled={!trajetDepart || !trajetDest || isStep2Submitting}
-                    activeOpacity={0.85}
-                  >
-                    {isStep2Submitting ? (
-                      <ActivityIndicator color={Y} />
-                    ) : (
-                      <View style={s.btnInner}>
-                        <Text style={s.btnText}>Recevoir le code</Text>
-                        <ArrowRight color={Y} width={18} height={18} />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                </>
-              )}
-
-              {/* ── Step 3: Vehicle (livreur only) ── */}
+              {/* ── Step 3: Vehicle (livreur) ── */}
               {step === 3 && role === "livreur" && (
                 <>
                   <Text style={s.cardTitle}>Votre véhicule</Text>
@@ -427,19 +483,102 @@ export default function Register() {
                   {err ? <Text style={s.errText}>{err}</Text> : null}
 
                   <TouchableOpacity
-                    style={[s.btn, (!vehicle || isStep2Submitting) && s.btnOff]}
+                    style={[s.btn, (!vehicle || submitting) && s.btnOff]}
                     onPress={onSubmit}
-                    disabled={!vehicle || isStep2Submitting}
+                    disabled={!vehicle || submitting}
                     activeOpacity={0.85}
                   >
-                    {isStep2Submitting ? (
-                      <ActivityIndicator color={Y} />
-                    ) : (
-                      <View style={s.btnInner}>
-                        <Text style={s.btnText}>Recevoir le code</Text>
-                        <ArrowRight color={Y} width={18} height={18} />
-                      </View>
-                    )}
+                    {submitting
+                      ? <ActivityIndicator color={Y} />
+                      : <View style={s.btnInner}>
+                          <Text style={s.btnText}>Recevoir le code</Text>
+                          <ArrowRight color={Y} width={18} height={18} />
+                        </View>}
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* ── Step 3: Trajet (voyageur / Long Voyage) ── */}
+              {step === 3 && role === "voyageur" && (
+                <>
+                  <Text style={s.cardTitle}>Votre trajet habituel</Text>
+                  <Text style={s.cardSub}>
+                    Si vous faites Nouakchott → Kaédi, le trajet retour est inclus automatiquement.
+                  </Text>
+
+                  <VillePicker
+                    label="Ville de départ"
+                    placeholder="Sélectionner le départ"
+                    value={trajetDepart}
+                    onChange={setTrajetDepart}
+                  />
+
+                  <View style={s.trajetArrow}>
+                    <Text style={s.trajetArrowText}>↓</Text>
+                  </View>
+
+                  <VillePicker
+                    label="Ville d'arrivée"
+                    placeholder="Sélectionner la destination"
+                    value={trajetDest}
+                    onChange={setTrajetDest}
+                  />
+
+                  {trajetDepart && trajetDest && (
+                    <View style={s.trajetPreview}>
+                      <Text style={s.trajetPreviewText}>
+                        {trajetDepart}  ⇄  {trajetDest}
+                      </Text>
+                    </View>
+                  )}
+
+                  {err ? <Text style={s.errText}>{err}</Text> : null}
+
+                  <TouchableOpacity
+                    style={[s.btn, (!trajetDepart || !trajetDest || submitting) && s.btnOff]}
+                    onPress={onSubmit}
+                    disabled={!trajetDepart || !trajetDest || submitting}
+                    activeOpacity={0.85}
+                  >
+                    {submitting
+                      ? <ActivityIndicator color={Y} />
+                      : <View style={s.btnInner}>
+                          <Text style={s.btnText}>Recevoir le code</Text>
+                          <ArrowRight color={Y} width={18} height={18} />
+                        </View>}
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* ── Step 3: Wilaya (maurigo / Car Rapide) ── */}
+              {step === 3 && role === "maurigo" && (
+                <>
+                  <Text style={s.cardTitle}>Votre wilaya</Text>
+                  <Text style={s.cardSub}>
+                    Choisissez la wilaya où vous exercez votre activité de Car Rapide.
+                  </Text>
+
+                  <VillePicker
+                    label="Wilaya de base"
+                    placeholder="Sélectionner votre wilaya"
+                    value={wilaya}
+                    onChange={setWilaya}
+                  />
+
+                  {err ? <Text style={s.errText}>{err}</Text> : null}
+
+                  <TouchableOpacity
+                    style={[s.btn, (!wilaya || submitting) && s.btnOff]}
+                    onPress={onSubmit}
+                    disabled={!wilaya || submitting}
+                    activeOpacity={0.85}
+                  >
+                    {submitting
+                      ? <ActivityIndicator color={Y} />
+                      : <View style={s.btnInner}>
+                          <Text style={s.btnText}>Recevoir le code</Text>
+                          <ArrowRight color={Y} width={18} height={18} />
+                        </View>}
                   </TouchableOpacity>
                 </>
               )}
@@ -497,27 +636,18 @@ const s = StyleSheet.create({
 
   dotsRow:  { flexDirection: "row", alignItems: "center",
     justifyContent: "center", gap: 6, marginBottom: 20 },
-  dot:      { width: 24, height: 4, borderRadius: R.full,
-    backgroundColor: "rgba(0,0,0,0.12)" },
+  dot:      { width: 24, height: 4, borderRadius: R.full, backgroundColor: "rgba(0,0,0,0.12)" },
   dotOn:    { width: 36, backgroundColor: INK },
-  stepText: { fontFamily: F.medium, fontSize: Sz.sm,
-    color: "rgba(0,0,0,0.40)", marginLeft: 8 },
+  stepText: { fontFamily: F.medium, fontSize: Sz.sm, color: "rgba(0,0,0,0.40)", marginLeft: 8 },
 
   card:      { backgroundColor: "#fff", borderRadius: 24, padding: S.px24,
-    borderWidth: 1, borderColor: BDR,
-    boxShadow: "0 4px 24px rgba(0,0,0,0.06)" },
+    borderWidth: 1, borderColor: BDR, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" },
 
-  tabBar:   { flexDirection: "row", backgroundColor: SURF,
-    borderRadius: R.lg, padding: 4, marginBottom: 16, gap: 4 },
-  tabBtn:   { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 6, paddingVertical: 10, borderRadius: R.md },
-  tabBtnOn: { backgroundColor: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.10)" },
-  tabLabel:   { fontFamily: F.medium, fontSize: Sz.base, color: INK3 },
-  tabLabelOn: { fontFamily: F.bold, color: INK },
-
-  roleDesc:     { backgroundColor: "rgba(245,196,0,0.10)", borderRadius: R.md,
-    paddingHorizontal: 12, paddingVertical: 8, marginBottom: S.px20 },
-  roleDescText: { fontFamily: F.regular, fontSize: Sz.sm, color: C.goldDark, textAlign: "center" },
+  roleBadge:      { flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: "rgba(245,196,0,0.10)", borderRadius: R.md,
+    paddingHorizontal: 12, paddingVertical: 7, alignSelf: "flex-start", marginBottom: 16 },
+  roleBadgeEmoji: { fontSize: 16 },
+  roleBadgeLabel: { fontFamily: F.bold, fontSize: Sz.sm, color: C.goldDark },
 
   cardTitle: { fontFamily: F.bold, fontSize: Sz.xl, color: INK, marginBottom: 4 },
   cardSub:   { fontFamily: F.regular, fontSize: Sz.sm, color: INK3, marginBottom: S.px24 },
@@ -538,8 +668,7 @@ const s = StyleSheet.create({
     position: "relative" },
   vehicleCardOn:  { borderColor: Y, backgroundColor: "rgba(245,196,0,0.10)" },
   vehicleCheck:   { position: "absolute", top: 6, right: 6, width: 20, height: 20,
-    borderRadius: R.full, backgroundColor: Y,
-    alignItems: "center", justifyContent: "center" },
+    borderRadius: R.full, backgroundColor: Y, alignItems: "center", justifyContent: "center" },
   vehicleEmoji:   { fontSize: 28, marginBottom: 6 },
   vehicleLabel:   { fontFamily: F.bold, fontSize: Sz.xs, color: INK, textAlign: "center" },
   vehicleLabelOn: { color: C.goldDark },

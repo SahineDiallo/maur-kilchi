@@ -126,15 +126,17 @@ function BoutiqueCard({ item }: { item: any }) {
       </View>
       <View style={boc.info}>
         <Text style={boc.name} numberOfLines={1}>{item.name}</Text>
-        <View style={boc.typeBadge}>
-          <Text style={boc.typeText}>{typeLabel}</Text>
-        </View>
-        {item.ville
-          ? <View style={boc.locRow}>
+        <View style={boc.metaRow}>
+          <View style={boc.typeBadge}>
+            <Text style={boc.typeText}>{typeLabel}</Text>
+          </View>
+          {item.ville ? (
+            <>
               <MapPin color={C.textMuted} width={11} height={11} />
               <Text style={boc.loc} numberOfLines={1}>{item.ville}</Text>
-            </View>
-          : null}
+            </>
+          ) : null}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -143,13 +145,13 @@ const boc = StyleSheet.create({
   card:      { backgroundColor: "transparent", borderRadius: 0, overflow: "visible", marginRight: 14 },
   imgWrap:   { width: "100%", height: 192, borderRadius: 14, overflow: "hidden" },
   img:       { width: "100%", height: "100%" },
-  typeBadge: { alignSelf: "flex-start", backgroundColor: C.goldLight,
-    borderRadius: R.full, paddingHorizontal: 8, paddingVertical: 2, marginTop: 5 },
-  typeText:  { fontFamily: F.medium, fontSize: 10, color: C.goldDark },
   info:      { paddingTop: 8, paddingBottom: 4 },
-  name:      { fontFamily: F.bold, fontSize: Sz.base, color: C.textPrimary, marginBottom: 2 },
-  locRow:    { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 4 },
-  loc:       { fontFamily: F.regular, fontSize: Sz.xs, color: C.textMuted },
+  name:      { fontFamily: F.bold, fontSize: Sz.base, color: C.textPrimary, marginBottom: 6 },
+  metaRow:   { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
+  typeBadge: { backgroundColor: C.goldLight, borderRadius: R.full,
+    paddingHorizontal: 8, paddingVertical: 2 },
+  typeText:  { fontFamily: F.medium, fontSize: 10, color: C.goldDark },
+  loc:       { fontFamily: F.regular, fontSize: Sz.xs, color: C.textMuted, flexShrink: 1 },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

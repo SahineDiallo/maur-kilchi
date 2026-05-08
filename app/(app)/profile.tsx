@@ -151,6 +151,59 @@ function LivreurProfile({ user, livreur, onToggleOnline, onLogout, router }: any
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// MAURIGO (CAR RAPIDE) PROFILE
+// ═══════════════════════════════════════════════════════════════════════════════
+function MaurigoProfile({ user, maurigo, onToggleOnline, onLogout, router }: any) {
+  return (
+    <ScrollView style={p.body} contentContainerStyle={{ paddingBottom: S.tabBar + 16 }}>
+
+      {/* Stats row */}
+      <View style={[p.statsCard, { marginTop: 0 }]}>
+        <StatPill icon={Star}   value={maurigo.rating?.toFixed(1) ?? "5.0"} label="Note" />
+        <View style={p.statsDivider} />
+        <StatPill icon={MapPin} value={maurigo.wilaya ?? "—"} label="Wilaya" />
+      </View>
+
+      {/* Online toggle */}
+      <Section>
+        <View style={p.onlineRow}>
+          <View style={p.onlineLeft}>
+            <View style={[p.onlineDot, maurigo.is_online ? p.onlineDotOn : p.onlineDotOff]} />
+            <View>
+              <Text style={p.onlineLabel}>
+                {maurigo.is_online ? "En ligne · متصل" : "Hors ligne · غير متصل"}
+              </Text>
+              <Text style={p.onlineSub}>
+                {maurigo.is_online
+                  ? "Vous êtes visible par les clients"
+                  : "Vous n'apparaissez pas dans la liste"}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={maurigo.is_online}
+            onValueChange={onToggleOnline}
+            trackColor={{ false: C.border, true: C.gold }}
+            thumbColor="#fff"
+          />
+        </View>
+      </Section>
+
+      {/* Account */}
+      <Section title="Compte · الحساب">
+        <MenuItem icon={User}     label="Modifier le profil" sub="Nom, photo"
+          onPress={() => router.push("/edit-profile")} />
+        <MenuItem icon={Settings} label="Paramètres" onPress={() => {}} />
+      </Section>
+
+      <Section>
+        <MenuItem icon={LogOut} label="Déconnexion · خروج" danger onPress={onLogout} />
+      </Section>
+    </ScrollView>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // VENDEUR PROFILE
 // ═══════════════════════════════════════════════════════════════════════════════
 function VendeurProfile({ user, boutique, onLogout, router }: any) {
@@ -247,9 +300,10 @@ export default function Profile() {
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuthStore();
 
-  const [livreur,      setLivreur]      = useState<any>(null);
-  const [boutique,     setBoutique]     = useState<any>(null);
-  const [roleLoading,  setRoleLoading]  = useState(true);
+  const [livreur,     setLivreur]     = useState<any>(null);
+  const [maurigo,     setMaurigo]     = useState<any>(null);
+  const [boutique,    setBoutique]    = useState<any>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -259,6 +313,11 @@ export default function Profile() {
         api.get("/livreurs/me/")
           .then((d) => setLivreur(d))
           .catch(() => setLivreur(null))
+          .finally(() => setRoleLoading(false));
+      } else if (user?.role === "maurigo") {
+        api.get("/maurigos/me/")
+          .then((d) => setMaurigo(d))
+          .catch(() => setMaurigo(null))
           .finally(() => setRoleLoading(false));
       } else {
         setRoleLoading(false);
@@ -278,9 +337,7 @@ export default function Profile() {
     const prev = livreur.is_online;
     setLivreur((l: any) => ({ ...l, is_online: val }));
     try {
-      // If going online but no coords yet, just use PATCH me
       await api.patch("/livreurs/me/", {});
-      // Push is_online via location endpoint
       const coords = livreur.latitude && livreur.longitude
         ? { latitude: livreur.latitude, longitude: livreur.longitude, is_online: val }
         : { latitude: 18.090, longitude: -15.970, is_online: val };
@@ -289,6 +346,20 @@ export default function Profile() {
       setLivreur((l: any) => ({ ...l, is_online: prev }));
     }
   }, [livreur]);
+
+  const handleToggleMaurigoOnline = useCallback(async (val: boolean) => {
+    if (!maurigo) return;
+    const prev = maurigo.is_online;
+    setMaurigo((m: any) => ({ ...m, is_online: val }));
+    try {
+      const coords = maurigo.latitude && maurigo.longitude
+        ? { latitude: maurigo.latitude, longitude: maurigo.longitude, is_online: val }
+        : { latitude: 18.090, longitude: -15.970, is_online: val };
+      await api.patch("/maurigos/me/location/", coords);
+    } catch {
+      setMaurigo((m: any) => ({ ...m, is_online: prev }));
+    }
+  }, [maurigo]);
 
   // Render in-place sign-in wall — no navigation during mount (avoids Fabric crash)
   if (!isAuthenticated) {
@@ -308,6 +379,13 @@ export default function Profile() {
   };
 
   const isLivreur = !roleLoading && livreur !== null;
+  const isMaurigo = !roleLoading && maurigo !== null;
+  const isOnline  = isLivreur ? livreur.is_online : isMaurigo ? maurigo.is_online : false;
+
+  const roleBadgeLabel = roleLoading ? "…"
+    : isLivreur ? "🏍️  Livreur"
+    : isMaurigo ? "🚕  Car Rapide"
+    : "🏪  Vendeur";
 
   return (
     <View style={p.root}>
@@ -323,10 +401,8 @@ export default function Profile() {
         <SafeAreaView>
           {/* Role badge */}
           <View style={p.roleBadgeRow}>
-            <View style={[p.roleBadge, isLivreur ? p.roleBadgeLivreur : p.roleBadgeVendeur]}>
-              <Text style={p.roleBadgeText}>
-                {roleLoading ? "…" : isLivreur ? "🏍️  Livreur" : "🏪  Vendeur"}
-              </Text>
+            <View style={p.roleBadge}>
+              <Text style={p.roleBadgeText}>{roleBadgeLabel}</Text>
             </View>
           </View>
 
@@ -342,8 +418,8 @@ export default function Profile() {
                 : <View style={p.avatarPlaceholder}>
                     <User color={C.textMuted} width={28} height={28} />
                   </View>}
-              {isLivreur && (
-                <View style={[p.onlinePip, livreur.is_online ? p.onlinePipOn : p.onlinePipOff]} />
+              {(isLivreur || isMaurigo) && (
+                <View style={[p.onlinePip, isOnline ? p.onlinePipOn : p.onlinePipOff]} />
               )}
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
@@ -364,12 +440,20 @@ export default function Profile() {
               onLogout={handleLogout}
               router={router}
             />
-          : <VendeurProfile
-              user={user}
-              boutique={boutique}
-              onLogout={handleLogout}
-              router={router}
-            />
+          : isMaurigo
+            ? <MaurigoProfile
+                user={user}
+                maurigo={maurigo}
+                onToggleOnline={handleToggleMaurigoOnline}
+                onLogout={handleLogout}
+                router={router}
+              />
+            : <VendeurProfile
+                user={user}
+                boutique={boutique}
+                onLogout={handleLogout}
+                router={router}
+              />
       )}
     </View>
   );
@@ -380,11 +464,10 @@ const p = StyleSheet.create({
   gradientWash: { position: "absolute", top: 0, left: 0, right: 0, height: 320, zIndex: 0 },
   headerWrap:   { paddingBottom: 20, zIndex: 5 },
 
-  roleBadgeRow:    { alignItems: "flex-start", paddingHorizontal: S.screen, paddingTop: S.px16 },
-  roleBadge:       { paddingHorizontal: 12, paddingVertical: 5, borderRadius: R.full },
-  roleBadgeVendeur:{ backgroundColor: "rgba(0,0,0,0.10)" },
-  roleBadgeLivreur:{ backgroundColor: "rgba(0,0,0,0.10)" },
-  roleBadgeText:   { fontFamily: F.bold, fontSize: Sz.xs, color: "#000" },
+  roleBadgeRow:  { alignItems: "flex-start", paddingHorizontal: S.screen, paddingTop: S.px16 },
+  roleBadge:     { paddingHorizontal: 12, paddingVertical: 5, borderRadius: R.full,
+    backgroundColor: "rgba(0,0,0,0.10)" },
+  roleBadgeText: { fontFamily: F.bold, fontSize: Sz.xs, color: "#000" },
 
   headerInner: { flexDirection: "row", alignItems: "center",
     paddingHorizontal: S.screen, paddingTop: 10, paddingBottom: 8, gap: 14 },

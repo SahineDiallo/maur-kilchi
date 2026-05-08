@@ -9,7 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MapPin, Coffee, Search, X, Star, Clock } from "react-native-feather";
 import api from "@/lib/api";
-import { C, F, Sz, S, Shadow, Border } from "@/constants/theme";
+import { C, F, Sz, S } from "@/constants/theme";
 
 const { width } = Dimensions.get("window");
 
@@ -31,25 +31,23 @@ function FilterIcon({
   label, emoji, active, onPress,
 }: { label: string; emoji: string; active: boolean; onPress: () => void }) {
   return (
-    <TouchableOpacity style={fi.wrap} onPress={onPress} activeOpacity={0.78}>
-      <View style={[fi.box, active && fi.boxOn]}>
-        <Text style={fi.emoji}>{emoji}</Text>
-      </View>
-      <Text style={[fi.label, active && fi.labelOn]} numberOfLines={2}>{label}</Text>
+    <TouchableOpacity style={[fi.pill, active && fi.pillOn]} onPress={onPress} activeOpacity={0.78}>
+      <Text style={fi.emoji}>{emoji}</Text>
+      <Text style={[fi.label, active && fi.labelOn]} numberOfLines={1}>{label}</Text>
     </TouchableOpacity>
   );
 }
 const fi = StyleSheet.create({
-  wrap:    { alignItems: "center", gap: 6, width: 84 },
-  box:     {
-    width: 64, height: 64, borderRadius: 20,
+  pill:    {
+    flexDirection: "row", alignItems: "center", gap: 7,
+    paddingHorizontal: 14, paddingVertical: 9,
+    borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.72)",
-    alignItems: "center", justifyContent: "center",
     borderWidth: 1.5, borderColor: "rgba(255,255,255,0.50)",
   },
-  boxOn:   { backgroundColor: "#111", borderColor: "#111" },
-  emoji:   { fontSize: 28 },
-  label:   { fontFamily: F.medium, fontSize: 10, color: "rgba(0,0,0,0.60)", textAlign: "center" },
+  pillOn:  { backgroundColor: "#111", borderColor: "#111" },
+  emoji:   { fontSize: 18 },
+  label:   { fontFamily: F.medium, fontSize: Sz.sm, color: "rgba(0,0,0,0.68)" },
   labelOn: { fontFamily: F.bold, color: "#fff" },
 });
 
@@ -108,9 +106,8 @@ const ct = StyleSheet.create({
 // ─────────────────────────────────────────────────────────────────────────────
 function RestaurantCard({ item }: { item: any }) {
   const router = useRouter();
-  const imgUri     = item.image_url ?? item.image ?? null;
-  const typeLabel  = item.boutique_type_display ?? item.boutique_type ?? "Restaurant";
-  const categories: any[] = item.menu_categories ?? [];
+  const imgUri    = item.image_url ?? item.image ?? null;
+  const typeLabel = item.boutique_type_display ?? item.boutique_type ?? "Restaurant";
 
   return (
     <TouchableOpacity
@@ -118,67 +115,44 @@ function RestaurantCard({ item }: { item: any }) {
       onPress={() => router.push(`/restaurant/${item.slug ?? item.id}`)}
       activeOpacity={0.92}
     >
-      {/* ── Cover image ── */}
+      {/* ── Cover image — all 4 corners rounded, no overflow clip on card ── */}
       <View style={rc.imgWrap}>
         {imgUri
           ? <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
           : <LinearGradient colors={["#FFD060", C.gold, "#C98A00"]} style={StyleSheet.absoluteFill} />}
 
-        {/* Bottom gradient scrim */}
-        <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.68)"]}
-          locations={[0.3, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-
-        {/* Type badge top-left */}
+        {/* Type badge — top left */}
         <View style={rc.badge}>
           <Text style={rc.badgeText}>{typeLabel}</Text>
         </View>
 
-        {/* Delivery hint top-right */}
+        {/* Delivery time — top right */}
         <View style={rc.timeBadge}>
           <Clock color="#fff" width={10} height={10} strokeWidth={2} />
           <Text style={rc.timeText}>20–35 min</Text>
         </View>
-
-        {/* Name + location pinned at bottom */}
-        <View style={rc.caption}>
-          <Text style={rc.name} numberOfLines={1}>{item.name}</Text>
-          {item.ville ? (
-            <View style={rc.locRow}>
-              <MapPin color="rgba(255,255,255,0.80)" width={10} height={10} />
-              <Text style={rc.locText}>{item.ville}</Text>
-            </View>
-          ) : null}
-        </View>
       </View>
 
-      {/* ── Info strip ── */}
+      {/* ── Info — transparent, name + rating + city below the image ── */}
       <View style={rc.info}>
-        <View style={rc.infoLeft}>
+        <Text style={rc.name} numberOfLines={1}>{item.name}</Text>
+        <View style={rc.metaRow}>
           <RatingRow rating={item.rating ?? 4.3} reviews={item.review_count ?? 0} />
-          {categories.length > 0 && (
-            <View style={{ marginTop: 6 }}>
-              <CuisineTags categories={categories} />
-            </View>
-          )}
-        </View>
-        {/* Open dot */}
-        <View style={rc.openBadge}>
-          <View style={rc.openDot} />
-          <Text style={rc.openText}>Ouvert</Text>
+          {item.ville ? (
+            <>
+              <Text style={rc.dot}>·</Text>
+              <MapPin color={C.textMuted} width={11} height={11} />
+              <Text style={rc.loc} numberOfLines={1}>{item.ville}</Text>
+            </>
+          ) : null}
         </View>
       </View>
     </TouchableOpacity>
   );
 }
 const rc = StyleSheet.create({
-  card:      {
-    backgroundColor: C.card, borderRadius: 20, overflow: "hidden",
-    ...Border.card,
-  },
-  imgWrap:   { height: 190, width: "100%" },
+  card:      { backgroundColor: "transparent", overflow: "visible" },
+  imgWrap:   { height: 170, width: "100%", borderRadius: 14, overflow: "hidden" },
   badge:     {
     position: "absolute", top: 12, left: 12,
     backgroundColor: C.gold, borderRadius: 6,
@@ -192,19 +166,11 @@ const rc = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 4,
   },
   timeText:  { fontFamily: F.medium, fontSize: 10, color: "#fff" },
-  caption:   { position: "absolute", bottom: 14, left: 14, right: 14 },
-  name:      { fontFamily: F.bold, fontSize: 20, color: "#fff", lineHeight: 26, marginBottom: 4 },
-  locRow:    { flexDirection: "row", alignItems: "center", gap: 4 },
-  locText:   { fontFamily: F.medium, fontSize: Sz.xs, color: "rgba(255,255,255,0.80)" },
-
-  info:      {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 14, paddingVertical: 12,
-  },
-  infoLeft:  { flex: 1 },
-  openBadge: { flexDirection: "row", alignItems: "center", gap: 5 },
-  openDot:   { width: 7, height: 7, borderRadius: 4, backgroundColor: "#22C55E" },
-  openText:  { fontFamily: F.medium, fontSize: Sz.xs, color: "#22C55E" },
+  info:      { paddingTop: 8, paddingBottom: 4 },
+  name:      { fontFamily: F.bold, fontSize: Sz.base, color: C.textPrimary, marginBottom: 5 },
+  metaRow:   { flexDirection: "row", alignItems: "center", gap: 5, flexWrap: "wrap" },
+  dot:       { fontFamily: F.regular, fontSize: Sz.sm, color: C.textMuted },
+  loc:       { fontFamily: F.regular, fontSize: Sz.xs, color: C.textMuted, flexShrink: 1 },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -278,7 +244,7 @@ export default function Restaurants() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: S.screen, gap: 14, paddingTop: 16, paddingBottom: 24 }}
+          contentContainerStyle={{ paddingHorizontal: S.screen, gap: 10, paddingTop: 14, paddingBottom: 20 }}
         >
           {FILTERS.map((f) => (
             <FilterIcon

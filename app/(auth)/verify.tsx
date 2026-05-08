@@ -28,7 +28,7 @@ export default function Verify() {
   const router = useRouter();
   const {
     pendingPhone, pendingFirst, pendingLast,
-    pendingRole, pendingVehicle, pendingTrajetDepart, pendingTrajetDest,
+    pendingRole, pendingVehicle, pendingTrajetDepart, pendingTrajetDest, pendingWilaya,
     login, clearPending,
   } = useAuthStore();
 
@@ -85,6 +85,7 @@ export default function Verify() {
       if (pendingVehicle)      payload.vehicle_type       = pendingVehicle;
       if (pendingTrajetDepart) payload.trajet_depart      = pendingTrajetDepart;
       if (pendingTrajetDest)   payload.trajet_destination = pendingTrajetDest;
+      if (pendingWilaya)       payload.wilaya             = pendingWilaya;
       const data = await api.post<{ access: string; refresh: string; user: any }>(
         "/auth/verify-otp/", payload,
       );
