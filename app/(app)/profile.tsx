@@ -193,28 +193,67 @@ function VendeurProfile({ user, boutique, onLogout, router }: any) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // ROOT
 // ═══════════════════════════════════════════════════════════════════════════════
+// ─── Unauthenticated wall — shown in-place, no navigation ────────────────────
+function GuestWall({ onSignIn, onRegister }: { onSignIn: () => void; onRegister: () => void }) {
+  return (
+    <View style={gw.root}>
+      <LinearGradient
+        colors={["#FFE14D", "#FFF5B0", "rgba(255,248,160,0.15)", "rgba(255,255,255,0)"]}
+        locations={[0, 0.38, 0.62, 1]}
+        style={gw.wash}
+        pointerEvents="none"
+      />
+      <SafeAreaView style={gw.safe}>
+        <View style={gw.body}>
+          <View style={gw.iconCircle}>
+            <User color="#F5C400" width={36} height={36} strokeWidth={1.5} />
+          </View>
+          <Text style={gw.title}>Votre compte · حسابك</Text>
+          <Text style={gw.sub}>
+            Connectez-vous pour accéder à votre profil, gérer votre boutique et suivre vos commandes.
+          </Text>
+          <TouchableOpacity style={gw.btnPrimary} onPress={onSignIn} activeOpacity={0.85}>
+            <Text style={gw.btnPrimaryText}>Se connecter</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={gw.btnSecondary} onPress={onRegister} activeOpacity={0.8}>
+            <Text style={gw.btnSecondaryText}>Créer un compte · إنشاء حساب</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+const gw = StyleSheet.create({
+  root:        { flex: 1, backgroundColor: "#fff" },
+  wash:        { position: "absolute", top: 0, left: 0, right: 0, height: 380 },
+  safe:        { flex: 1 },
+  body:        { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
+  iconCircle:  { width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(245,196,0,0.12)",
+    alignItems: "center", justifyContent: "center", marginBottom: 24 },
+  title:       { fontFamily: F.bold, fontSize: Sz.xl, color: "#111", marginBottom: 12, textAlign: "center" },
+  sub:         { fontFamily: F.regular, fontSize: Sz.base, color: "#777", textAlign: "center",
+    lineHeight: 22, marginBottom: 36 },
+  btnPrimary:  { width: "100%", height: 56, backgroundColor: "#111", borderRadius: 16,
+    alignItems: "center", justifyContent: "center", marginBottom: 12 },
+  btnPrimaryText: { fontFamily: F.bold, fontSize: Sz.md, color: "#F5C400" },
+  btnSecondary:   { width: "100%", height: 54, borderRadius: 16, borderWidth: 1.5,
+    borderColor: "rgba(0,0,0,0.12)", backgroundColor: "#F7F5F0",
+    alignItems: "center", justifyContent: "center" },
+  btnSecondaryText: { fontFamily: F.medium, fontSize: Sz.md, color: "#111" },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 export default function Profile() {
   const router = useRouter();
-  const { user, logout, isAuthenticated, bootstrapDone } = useAuthStore();
+  const { user, logout, isAuthenticated } = useAuthStore();
 
   const [livreur,      setLivreur]      = useState<any>(null);
   const [boutique,     setBoutique]     = useState<any>(null);
   const [roleLoading,  setRoleLoading]  = useState(true);
 
-  // Redirect to welcome screen after bootstrap confirms user is not logged in
-  useEffect(() => {
-    if (bootstrapDone && !isAuthenticated) {
-      router.replace("/(auth)");
-    }
-  }, [bootstrapDone, isAuthenticated]);
-
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // Defer all data loading until after the tab-switch animation finishes.
-    // React Navigation wraps each screen in overflow:"hidden" during the
-    // animation; mounting new views inside it before the frame is done
-    // triggers the Fabric "addViewAt: child already has a parent" crash.
     const task = InteractionManager.runAfterInteractions(() => {
       if (user?.role === "livreur") {
         api.get("/livreurs/me/")
@@ -233,11 +272,23 @@ export default function Profile() {
     return () => task.cancel();
   }, [user?.role, isAuthenticated]);
 
+  // Show sign-in wall in-place — no router.replace() to avoid the Fabric
+  // "addViewAt: child already has a parent" crash caused by navigating away
+  // while the screen is still mounting its initial view tree.
+  if (!isAuthenticated) {
+    return (
+      <GuestWall
+        onSignIn={() => router.push("/(auth)/sign-in")}
+        onRegister={() => router.push("/(auth)/register")}
+      />
+    );
+  }
+
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vous déconnecter ?", [
       { text: "Annuler", style: "cancel" },
       { text: "Déconnecter", style: "destructive",
-        onPress: () => { logout(); router.replace("/(auth)"); } },
+        onPress: () => logout() },
     ]);
   };
 
