@@ -4,10 +4,13 @@ const BASE = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000") + "/ap
 
 if (__DEV__) console.log("[api] base →", BASE);
 
+const APP_KEY = process.env.EXPO_PUBLIC_APP_KEY ?? "";
+
 const getHeaders = async (extra: Record<string, string> = {}) => {
   const token = await SecureStore.getItemAsync("access_token");
   const h: Record<string, string> = { "Content-Type": "application/json", ...extra };
   if (token) h["Authorization"] = `Bearer ${token}`;
+  if (APP_KEY) h["X-App-Key"] = APP_KEY;
   return h;
 };
 
